@@ -15,8 +15,7 @@ public partial class TeamTaskBuilder : EntityBuilder<TeamTask>
             .WithColumn(nameof(TeamTask.Title)).AsString(500).NotNullable()
             .WithColumn(nameof(TeamTask.Description)).AsString(int.MaxValue).Nullable()
             .WithColumn(nameof(TeamTask.DoneOnUtc)).AsDateTime2().Nullable()
-            .WithColumn(nameof(TeamTask.AssignedToTeamMemberMapId)).AsInt32().ForeignKey<TeamMemberMap>()
-            .WithColumn(nameof(TeamTask.CreatedByUserId)).AsInt32().ForeignKey<Customer>();
+            .WithColumn(nameof(TeamTask.AssignedToTeamMemberMapId)).AsInt32().ForeignKey<TeamMemberMap>();
     }
 
     #endregion
