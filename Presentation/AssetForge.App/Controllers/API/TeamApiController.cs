@@ -141,6 +141,17 @@ namespace AssetForge.App.Controllers.API
         }
 
         [HttpGet("GetUsers")]
+        public virtual async Task<IActionResult> GetUsers()
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
+                return BadRequest();
+
+            var model = await _customerModelFactory.PrepareCustomerSearchModelAsync(new CustomerSearchModel());
+
+            return OkWrap(model);
+        }
+
+        [HttpPost("GetUsers")]
         public virtual async Task<IActionResult> GetUsers([FromBody] BaseQueryModel<CustomerSearchModel> queryModel)
         {
             if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
