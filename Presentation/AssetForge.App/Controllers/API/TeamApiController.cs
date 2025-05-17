@@ -9,6 +9,8 @@ using AssetForge.App.Models.Teams;
 using AssetForge.Core.Domain.Teams;
 using AssetForge.Services.Teams;
 using DocumentFormat.OpenXml.Wordprocessing;
+using AssetForge.App.Areas.Admin.Models.Customers;
+using AssetForge.App.Areas.Admin.Factories;
 
 namespace AssetForge.App.Controllers.API
 {
@@ -17,12 +19,15 @@ namespace AssetForge.App.Controllers.API
     public class TeamApiController : BaseApiController
     {
         private readonly IPermissionService _permissionService;
+        private readonly ICustomerModelFactory _customerModelFactory;
         private readonly ITeamService _teamService;
 
         public TeamApiController(IPermissionService permissionService,
+            ICustomerModelFactory customerModelFactory,
             ITeamService teamService)
         {
             _permissionService = permissionService;
+            _customerModelFactory = customerModelFactory;
             _teamService = teamService;
         }
 
@@ -98,6 +103,21 @@ namespace AssetForge.App.Controllers.API
         }
 
         [HttpGet("GetTeamList")]
+        public virtual async Task<IActionResult> GetTeamList()
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
+                return BadRequest();
+
+            var searchModel = new TeamSearchModel();
+
+
+            //prepare page parameters
+            searchModel.SetGridPageSize();
+
+            return OkWrap(searchModel);
+        }
+
+        [HttpPost("GetTeamList")]
         public virtual async Task<IActionResult> GetTeamList([FromBody] BaseQueryModel<TeamSearchModel> queryModel)
         {
             if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
@@ -118,6 +138,23 @@ namespace AssetForge.App.Controllers.API
             }).ToList();
 
             return OkWrap(new TeamListModel() { Teams = teamModels });
+        }
+
+        [HttpGet("GetUsers")]
+        public virtual async Task<IActionResult> GetUsers([FromBody] BaseQueryModel<CustomerSearchModel> queryModel)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
+                return BadRequest();
+
+            var model = queryModel.Data;
+            var customerList = await _customerModelFactory.PrepareCustomerListModelAsync(model);
+
+            var data = new CustomerListTeamModel
+            {
+                Customers = customerList.Data.ToList()
+            };
+
+            return OkWrap(data);
         }
     }
 }
