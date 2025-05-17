@@ -402,7 +402,7 @@ public partial interface ICustomerService
     /// A task that represents the asynchronous operation
     /// The task result contains the result
     /// </returns>
-    Task<bool> IsForumModeratorAsync(Customer customer, bool onlyActiveCustomerRoles = true);
+    //Task<bool> IsForumModeratorAsync(Customer customer, bool onlyActiveCustomerRoles = true);
 
     /// <summary>
     /// Gets a value indicating whether customer is registered

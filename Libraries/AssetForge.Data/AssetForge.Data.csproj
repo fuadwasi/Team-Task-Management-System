@@ -6,6 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="tmp\**" />
+    <EmbeddedResource Remove="tmp\**" />
+    <None Remove="tmp\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FluentMigrator" Version="5.2.0" />
     <PackageReference Include="FluentMigrator.Runner" Version="5.2.0" />
     <PackageReference Include="linq2db" Version="5.4.1" />
@@ -16,11 +22,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="tmp\" />
+    <ProjectReference Include="..\AssetForge.Core\AssetForge.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AssetForge.Core\AssetForge.Core.csproj" />
+    <Folder Include="Migrations\Upgrade\" />
   </ItemGroup>
 
 </Project>

@@ -1,21 +1,18 @@
-﻿using FluentMigrator;
-using AssetForge.Core.Domain.Attributes;
-using AssetForge.Core.Domain.Catalog;
-using AssetForge.Core.Domain.Common;
+﻿using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Configuration;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Logging;
 using AssetForge.Core.Domain.Media;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.ScheduleTasks;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Domain.Seo;
 using AssetForge.Core.Domain.Sites;
-using AssetForge.Core.Domain.Topics;
-using AssetForge.Core.Domain.Vendors;
+using AssetForge.Core.Domain.Teams;
 using AssetForge.Data.Extensions;
+using AssetForge.Data.Mapping.Builders.Teams;
+using FluentMigrator;
 
 namespace AssetForge.Data.Migrations.Installation;
 
@@ -46,14 +43,10 @@ public class SchemaMigration : ForwardOnlyMigration
         Create.TableFor<CustomerAddressMapping>();
         Create.TableFor<CustomerRole>();
         Create.TableFor<CustomerCustomerRoleMapping>();
-        Create.TableFor<ExternalAuthenticationRecord>();
-        Create.TableFor<RewardPointsHistory>();
         Create.TableFor<Site>();
         Create.TableFor<SiteMapping>();
         Create.TableFor<LocaleStringResource>();
         Create.TableFor<LocalizedProperty>();
-        Create.TableFor<Manufacturer>();
-        Create.TableFor<ManufacturerTemplate>();
         Create.TableFor<Download>();
         Create.TableFor<Picture>();
         Create.TableFor<PictureBinary>();
@@ -62,25 +55,13 @@ public class SchemaMigration : ForwardOnlyMigration
         Create.TableFor<ActivityLogType>();
         Create.TableFor<ActivityLog>();
         Create.TableFor<Log>();
-        Create.TableFor<EmailAccount>();
-        Create.TableFor<MessageTemplate>();
-        Create.TableFor<NewsLetterSubscription>();
-        Create.TableFor<QueuedEmail>();
         Create.TableFor<AclRecord>();
         Create.TableFor<PermissionRecord>();
         Create.TableFor<PermissionRecordCustomerRoleMapping>();
         Create.TableFor<UrlRecord>();
         Create.TableFor<ScheduleTask>();
-        Create.TableFor<WidgetAttribute>();
-        Create.TableFor<PredefinedWidgetAttributeValue>();
-        Create.TableFor<WidgetAttributeMapping>();
-        Create.TableFor<WidgetAttributeValue>();
-        Create.TableFor<WidgetAttributeValuePicture>();
-        Create.TableFor<TopicTemplate>();
-        Create.TableFor<Topic>();
-        Create.TableFor<Vendor>();
-        Create.TableFor<VendorAttribute>();
-        Create.TableFor<VendorAttributeValue>();
-        Create.TableFor<VendorNote>();
+        Create.TableFor<Team>();
+        Create.TableFor<TeamMemberMap>();
+        Create.TableFor<TeamTask>();
     }
 }

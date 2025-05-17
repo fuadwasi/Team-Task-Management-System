@@ -3,7 +3,6 @@ using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Domain.Seo;
 using AssetForge.Services.Attributes;
@@ -15,7 +14,6 @@ using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
 using AssetForge.Services.Media;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Sites;
 using System.Globalization;
@@ -47,7 +45,6 @@ public partial class ExportManager : IExportManager
     protected readonly ILanguageService _languageService;
     protected readonly ILocalizationService _localizationService;
     protected readonly ILocalizedEntityService _localizedEntityService;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
     protected readonly IPictureService _pictureService;
     protected readonly IStateProvinceService _stateProvinceService;
     protected readonly ISiteMappingService _siteMappingService;
@@ -73,7 +70,6 @@ public partial class ExportManager : IExportManager
         ILanguageService languageService,
         ILocalizationService localizationService,
         ILocalizedEntityService localizedEntityService,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
         IPictureService pictureService,
         IStateProvinceService stateProvinceService,
         ISiteMappingService siteMappingService,
@@ -95,7 +91,6 @@ public partial class ExportManager : IExportManager
         _languageService = languageService;
         _localizationService = localizationService;
         _localizedEntityService = localizedEntityService;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
         _pictureService = pictureService;
         _stateProvinceService = stateProvinceService;
         _siteMappingService = siteMappingService;
@@ -241,110 +236,6 @@ public partial class ExportManager : IExportManager
 
     #region Methods
 
-    ///// <summary>
-    ///// Export category list to XML
-    ///// </summary>
-    ///// <returns>
-    ///// A task that represents the asynchronous operation
-    ///// The task result contains the result in XML format
-    ///// </returns>
-    //public virtual async Task<string> ExportCategoriesToXmlAsync()
-    //{
-    //    var settings = new XmlWriterSettings
-    //    {
-    //        Async = true,
-    //        ConformanceLevel = ConformanceLevel.Auto
-    //    };
-
-    //    await using var stringWriter = new StringWriter();
-    //    await using var xmlWriter = XmlWriter.Create(stringWriter, settings);
-
-    //    await xmlWriter.WriteStartDocumentAsync();
-    //    await xmlWriter.WriteStartElementAsync("Categories");
-    //    await xmlWriter.WriteAttributeStringAsync("Version", AssetForgeVersion.CURRENT_VERSION);
-    //    var totalCategories = await WriteCategoriesAsync(xmlWriter, 0, 0);
-    //    await xmlWriter.WriteEndElementAsync();
-    //    await xmlWriter.WriteEndDocumentAsync();
-    //    await xmlWriter.FlushAsync();
-
-    //    //activity log
-    //    await _customerActivityService.InsertActivityAsync("ExportCategories",
-    //        string.Format(await _localizationService.GetResourceAsync("ActivityLog.ExportCategories"), totalCategories));
-
-    //    return stringWriter.ToString();
-    //}
-
-    ///// <summary>
-    ///// Export categories to XLSX
-    ///// </summary>
-    ///// <param name="categories">Categories</param>
-    ///// <returns>A task that represents the asynchronous operation</returns>
-    //public virtual async Task<byte[]> ExportCategoriesToXlsxAsync(IList<Category> categories)
-    //{
-    //    var parentCategories = new List<Category>();
-    //    if (_catalogSettings.ExportImportCategoriesUsingCategoryName)
-    //        //performance optimization, load all parent categories in one SQL request
-    //        parentCategories.AddRange(await _categoryService.GetCategoriesByIdsAsync(categories.Select(c => c.ParentCategoryId).Where(id => id != 0).ToArray()));
-
-    //    var languages = await _languageService.GetAllLanguagesAsync(showHidden: true);
-
-    //    var localizedProperties = new[]
-    //    {
-    //        new PropertyByName<Category, Language>("Id", (p, l) => p.Id),
-    //        new PropertyByName<Category, Language>("Name", async (p, l) => await _localizationService.GetLocalizedAsync(p, x => x.Name, l.Id, false)),
-    //        new PropertyByName<Category, Language>("MetaKeywords", async (p, l) => await _localizationService.GetLocalizedAsync(p, x => x.MetaKeywords, l.Id, false)),
-    //        new PropertyByName<Category, Language>("MetaDescription", async (p, l) => await _localizationService.GetLocalizedAsync(p, x => x.MetaDescription, l.Id, false)),
-    //        new PropertyByName<Category, Language>("MetaTitle", async (p, l) => await _localizationService.GetLocalizedAsync(p, x => x.MetaTitle, l.Id, false)),
-    //        new PropertyByName<Category, Language>("SeName", async (p, l) => await _urlRecordService.GetSeNameAsync(p, l.Id, returnDefaultValue: false), await IgnoreExportCategoryPropertyAsync())
-    //    };
-
-    //    //property manager 
-    //    var manager = new PropertyManager<Category, Language>(new[]
-    //    {
-    //        new PropertyByName<Category, Language>("Id", (p, l) => p.Id),
-    //        new PropertyByName<Category, Language>("Name", (p, l) => p.Name),
-    //        new PropertyByName<Category, Language>("Description", (p, l) => p.Description),
-    //        new PropertyByName<Category, Language>("CategoryTemplateId", (p, l) => p.CategoryTemplateId),
-    //        new PropertyByName<Category, Language>("MetaKeywords", (p, l) => p.MetaKeywords, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("MetaDescription", (p, l) => p.MetaDescription, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("MetaTitle", (p, l) => p.MetaTitle, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("SeName", async (p, l) => await _urlRecordService.GetSeNameAsync(p, 0), await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("ParentCategoryId", (p, l) => p.ParentCategoryId),
-    //        new PropertyByName<Category, Language>("ParentCategoryName", async (p, l) =>
-    //        {
-    //            var category = parentCategories.FirstOrDefault(c => c.Id == p.ParentCategoryId);
-    //            return category != null ? await _categoryService.GetFormattedBreadCrumbAsync(category) : null;
-
-    //        }, !_catalogSettings.ExportImportCategoriesUsingCategoryName),
-    //        new PropertyByName<Category, Language>("Picture", async (p, l) => await GetPicturesAsync(p.PictureId)),
-    //        new PropertyByName<Category, Language>("PageSize", (p, l) => p.PageSize, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("PriceRangeFiltering", (p, l) => p.PriceRangeFiltering, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("PriceFrom", (p, l) => p.PriceFrom, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("PriceTo", (p, l) => p.PriceTo, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("ManuallyPriceRange", (p, l) => p.ManuallyPriceRange, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("AllowCustomersToSelectPageSize", (p, l) => p.AllowCustomersToSelectPageSize, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("PageSizeOptions", (p, l) => p.PageSizeOptions, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("ShowOnHomepage", (p, l) => p.ShowOnHomepage, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("IncludeInTopMenu", (p, l) => p.IncludeInTopMenu, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("Published", (p, l) => p.Published, await IgnoreExportCategoryPropertyAsync()),
-    //        new PropertyByName<Category, Language>("DisplayOrder", (p, l) => p.DisplayOrder)
-    //    }, _catalogSettings, localizedProperties, languages);
-
-    //    //activity log
-    //    await _customerActivityService.InsertActivityAsync("ExportCategories",
-    //        string.Format(await _localizationService.GetResourceAsync("ActivityLog.ExportCategories"), categories.Count));
-
-    //    return await manager.ExportToXlsxAsync(categories);
-    //}
-
-    /// <summary>
-    /// Export customer list to XML
-    /// </summary>
-    /// <param name="customers">Customers</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the result in XML format
-    /// </returns>
     public virtual async Task<string> ExportCustomersToXmlAsync(IList<Customer> customers)
     {
         var settings = new XmlWriterSettings
@@ -373,7 +264,7 @@ public partial class ExportManager : IExportManager
             await xmlWriter.WriteElementStringAsync("IsGuest", null, (await _customerService.IsGuestAsync(customer)).ToString());
             await xmlWriter.WriteElementStringAsync("IsRegistered", null, (await _customerService.IsRegisteredAsync(customer)).ToString());
             await xmlWriter.WriteElementStringAsync("IsAdministrator", null, (await _customerService.IsAdminAsync(customer)).ToString());
-            await xmlWriter.WriteElementStringAsync("IsForumModerator", null, (await _customerService.IsForumModeratorAsync(customer)).ToString());
+            //await xmlWriter.WriteElementStringAsync("IsForumModerator", null, (await _customerService.IsForumModeratorAsync(customer)).ToString());
             await xmlWriter.WriteElementStringAsync("CreatedOnUtc", null, customer.CreatedOnUtc.ToString(CultureInfo.InvariantCulture));
 
             await xmlWriter.WriteElementStringAsync("FirstName", null, customer.FirstName);
@@ -391,13 +282,6 @@ public partial class ExportManager : IExportManager
             await xmlWriter.WriteElementStringAsync("Phone", null, customer.Phone);
             await xmlWriter.WriteElementStringAsync("Fax", null, customer.Fax);
             await xmlWriter.WriteElementStringAsync("TimeZoneId", null, customer.TimeZoneId);
-
-            foreach (var site in await _siteService.GetAllSitesAsync())
-            {
-                var newsletter = await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndSiteIdAsync(customer.Email, site.Id);
-                var subscribedToNewsletters = newsletter != null && newsletter.Active;
-                await xmlWriter.WriteElementStringAsync($"Newsletter-in-site-{site.Id}", null, subscribedToNewsletters.ToString());
-            }
 
             await xmlWriter.WriteElementStringAsync("AvatarPictureId", null, (await _genericAttributeService.GetAttributeAsync<int>(customer, CustomerDefaults.AvatarPictureIdAttribute)).ToString());
             await xmlWriter.WriteElementStringAsync("ForumPostCount", null, (await _genericAttributeService.GetAttributeAsync<int>(customer, CustomerDefaults.ForumPostCountAttribute)).ToString());
@@ -424,57 +308,6 @@ public partial class ExportManager : IExportManager
         return stringWriter.ToString();
     }
 
-    /// <summary>
-    /// Export newsletter subscribers to TXT
-    /// </summary>
-    /// <param name="subscriptions">Subscriptions</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the result in TXT (string) format
-    /// </returns>
-    public virtual async Task<string> ExportNewsletterSubscribersToTxtAsync(IList<NewsLetterSubscription> subscriptions)
-    {
-        ArgumentNullException.ThrowIfNull(subscriptions);
-
-        const char separator = ',';
-        var sb = new StringBuilder();
-
-        sb.Append(await _localizationService.GetResourceAsync("Admin.Promotions.NewsLetterSubscriptions.Fields.Email"));
-        sb.Append(separator);
-        sb.Append(await _localizationService.GetResourceAsync("Admin.Promotions.NewsLetterSubscriptions.Fields.Active"));
-        sb.Append(separator);
-        sb.Append(await _localizationService.GetResourceAsync("Admin.Promotions.NewsLetterSubscriptions.Fields.Site"));
-        sb.Append(separator);
-        sb.Append(await _localizationService.GetResourceAsync("Admin.Promotions.NewsLetterSubscriptions.Fields.Language"));
-        sb.Append(Environment.NewLine);
-
-        foreach (var subscription in subscriptions)
-        {
-            sb.Append(subscription.Email);
-            sb.Append(separator);
-            sb.Append(subscription.Active);
-            sb.Append(separator);
-            sb.Append(subscription.SiteId);
-            sb.Append(separator);
-            sb.Append(subscription.LanguageId);
-            sb.Append(Environment.NewLine);
-        }
-
-        //activity log
-        await _customerActivityService.InsertActivityAsync("ExportNewsLetterSubscriptions",
-            string.Format(await _localizationService.GetResourceAsync("ActivityLog.ExportNewsLetterSubscriptions"), subscriptions.Count));
-
-        return sb.ToString();
-    }
-
-    /// <summary>
-    /// Export states to TXT
-    /// </summary>
-    /// <param name="states">States</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the result in TXT (string) format
-    /// </returns>
     public virtual async Task<string> ExportStatesToTxtAsync(IList<StateProvince> states)
     {
         ArgumentNullException.ThrowIfNull(states);
@@ -502,11 +335,6 @@ public partial class ExportManager : IExportManager
         return sb.ToString();
     }
 
-    /// <summary>
-    /// Export customer list to XLSX
-    /// </summary>
-    /// <param name="customers">Customers</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
     public virtual async Task<byte[]> ExportCustomersToXlsxAsync(IList<Customer> customers)
     {
         async Task<object> getCountry(Customer customer)
@@ -546,7 +374,7 @@ public partial class ExportManager : IExportManager
             new PropertyByName<Customer, Language>("IsGuest", async (p, l) => await _customerService.IsGuestAsync(p)),
             new PropertyByName<Customer, Language>("IsRegistered", async (p, l) => await _customerService.IsRegisteredAsync(p)),
             new PropertyByName<Customer, Language>("IsAdministrator", async (p, l) => await _customerService.IsAdminAsync(p)),
-            new PropertyByName<Customer, Language>("IsForumModerator", async (p, l) => await _customerService.IsForumModeratorAsync(p)),
+            //new PropertyByName<Customer, Language>("IsForumModerator", async (p, l) => await _customerService.IsForumModeratorAsync(p)),
             new PropertyByName<Customer, Language>("CreatedOnUtc", (p, l) => p.CreatedOnUtc),
             //attributes
             new PropertyByName<Customer, Language>("FirstName", (p, l) => p.FirstName, !_customerSettings.FirstNameEnabled),

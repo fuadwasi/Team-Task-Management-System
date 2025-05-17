@@ -6,10 +6,8 @@ using AssetForge.Core.Infrastructure;
 using AssetForge.Data;
 using AssetForge.Services.Attributes;
 using AssetForge.Services.Authentication;
-using AssetForge.Services.Authentication.External;
 using AssetForge.Services.Authentication.MultiFactor;
 using AssetForge.Services.Caching;
-using AssetForge.Services.Cms;
 using AssetForge.Services.Common;
 using AssetForge.Services.Configuration;
 using AssetForge.Services.Customers;
@@ -23,15 +21,14 @@ using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
 using AssetForge.Services.Media;
 using AssetForge.Services.Media.RoxyFileman;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Plugins;
 using AssetForge.Services.Plugins.Marketplace;
 using AssetForge.Services.ScheduleTasks;
 using AssetForge.Services.Security;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Sites;
+using AssetForge.Services.Teams;
 using AssetForge.Services.Themes;
-using AssetForge.Services.Topics;
 using AssetForge.Web.Framework.Factories;
 using AssetForge.Web.Framework.Menu;
 using AssetForge.Web.Framework.Mvc.Routing;
@@ -129,7 +126,6 @@ namespace AssetForge.Web.Framework.Infrastructure
             services.AddScoped<ISiteContext, WebSiteContext>();
 
             //services
-            services.AddScoped<ITopicTemplateService, TopicTemplateService>();
             services.AddScoped<IAddressService, AddressService>();
             services.AddScoped<IGenericAttributeService, GenericAttributeService>();
             services.AddScoped<ICustomerService, CustomerService>();
@@ -147,22 +143,12 @@ namespace AssetForge.Web.Framework.Infrastructure
             services.AddScoped<ILocalizedEntityService, LocalizedEntityService>();
             services.AddScoped<ILanguageService, LanguageService>();
             services.AddScoped<IDownloadService, DownloadService>();
-            services.AddScoped<IMessageTemplateService, MessageTemplateService>();
+            services.AddScoped<ITeamService, TeamService>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
-            services.AddScoped<IQueuedEmailService, QueuedEmailService>();
-            services.AddScoped<INewsLetterSubscriptionService, NewsLetterSubscriptionService>();
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddScoped<IEmailAccountService, EmailAccountService>();
-            services.AddScoped<IWorkflowMessageService, WorkflowMessageService>();
-            services.AddScoped<IMessageTokenProvider, MessageTokenProvider>();
-            services.AddScoped<ITokenizer, Tokenizer>();
-            services.AddScoped<ISmtpBuilder, SmtpBuilder>();
-            services.AddScoped<IEmailSender, EmailSender>();
             services.AddScoped<IEncryptionService, EncryptionService>();
             services.AddScoped<IAuthenticationService, CookieAuthenticationService>();
             services.AddScoped<IUrlRecordService, UrlRecordService>();
             services.AddScoped<ILogger, DefaultLogger>();
-            services.AddScoped<ITopicService, TopicService>();
             services.AddScoped<ICustomerActivityService, CustomerActivityService>();
             services.AddScoped<IDateTimeHelper, DateTimeHelper>();
             services.AddScoped<IAssetForgeHtmlHelper, AssetForgeHtmlHelper>();
@@ -170,7 +156,6 @@ namespace AssetForge.Web.Framework.Infrastructure
             services.AddScoped<IUploadService, UploadService>();
             services.AddScoped<IThemeProvider, ThemeProvider>();
             services.AddScoped<IThemeContext, ThemeContext>();
-            services.AddScoped<IExternalAuthenticationService, ExternalAuthenticationService>();
             services.AddSingleton<IRoutePublisher, RoutePublisher>();
             services.AddSingleton<IEventPublisher, EventPublisher>();
             services.AddScoped<ISettingService, SettingService>();
@@ -190,9 +175,7 @@ namespace AssetForge.Web.Framework.Infrastructure
 
             //plugin managers
             services.AddScoped(typeof(IPluginManager<>), typeof(PluginManager<>));
-            services.AddScoped<IAuthenticationPluginManager, AuthenticationPluginManager>();
             services.AddScoped<IMultiFactorAuthenticationPluginManager, MultiFactorAuthenticationPluginManager>();
-            services.AddScoped<IWidgetPluginManager, WidgetPluginManager>();
 
             services.AddSingleton<IActionContextAccessor, ActionContextAccessor>();
 

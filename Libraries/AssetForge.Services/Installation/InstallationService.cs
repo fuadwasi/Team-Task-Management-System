@@ -1,18 +1,16 @@
 ﻿using AssetForge.Core;
 using AssetForge.Core.Domain;
-using AssetForge.Core.Domain.Cms;
 using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Logging;
 using AssetForge.Core.Domain.Media;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.ScheduleTasks;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Domain.Seo;
 using AssetForge.Core.Domain.Sites;
-using AssetForge.Core.Domain.Topics;
+using AssetForge.Core.Domain.Teams;
 using AssetForge.Core.Http;
 using AssetForge.Core.Infrastructure;
 using AssetForge.Core.Security;
@@ -44,11 +42,9 @@ namespace AssetForge.Services.Installation
         protected readonly IRepository<Country> _countryRepository;
         protected readonly IRepository<Customer> _customerRepository;
         protected readonly IRepository<CustomerRole> _customerRoleRepository;
-        protected readonly IRepository<EmailAccount> _emailAccountRepository;
         protected readonly IRepository<Language> _languageRepository;
         protected readonly IRepository<StateProvince> _stateProvinceRepository;
         protected readonly IRepository<Site> _siteRepository;
-        private readonly IRepository<TopicTemplate> _topicTemplateRepository;
         protected readonly IRepository<UrlRecord> _urlRecordRepository;
         protected readonly IWebHelper _webHelper;
 
@@ -63,11 +59,9 @@ namespace AssetForge.Services.Installation
             IRepository<Country> countryRepository,
             IRepository<Customer> customerRepository,
             IRepository<CustomerRole> customerRoleRepository,
-            IRepository<EmailAccount> emailAccountRepository,
             IRepository<Language> languageRepository,
             IRepository<StateProvince> stateProvinceRepository,
             IRepository<Site> siteRepository,
-            IRepository<TopicTemplate> topicTemplateRepository,
             IRepository<UrlRecord> urlRecordRepository,
             IWebHelper webHelper)
         {
@@ -78,11 +72,9 @@ namespace AssetForge.Services.Installation
             _countryRepository = countryRepository;
             _customerRepository = customerRepository;
             _customerRoleRepository = customerRoleRepository;
-            _emailAccountRepository = emailAccountRepository;
             _languageRepository = languageRepository;
             _stateProvinceRepository = stateProvinceRepository;
             _siteRepository = siteRepository;
-            _topicTemplateRepository = topicTemplateRepository;
             _urlRecordRepository = urlRecordRepository;
             _webHelper = webHelper;
         }
@@ -135,7 +127,7 @@ namespace AssetForge.Services.Installation
             ArgumentNullException.ThrowIfNull(entity);
 
             //validation
-            var okChars = "abcdefghijklmnopqrstuvwxyz1234567890 _-";
+            var okChars = "abcdefghijklmnopqrstuvwxyzEmployee123!7890 _-";
             seName = seName.Trim().ToLowerInvariant();
 
             var sb = new StringBuilder();
@@ -390,7 +382,7 @@ namespace AssetForge.Services.Installation
             var siteId = defaultSite.Id;
 
             //second user
-            var secondUserEmail = "steve_gates@ixcms.com";
+            var secondUserEmail = "manager@demo.com";
             var secondUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -431,14 +423,35 @@ namespace AssetForge.Services.Installation
             await InsertInstallationDataAsync(new CustomerPassword
             {
                 CustomerId = secondUser.Id,
-                Password = "123456",
+                Password = "Manager123!",
                 PasswordFormat = PasswordFormat.Clear,
                 PasswordSalt = string.Empty,
                 CreatedOnUtc = DateTime.UtcNow
             });
 
+            var team = new Team
+            {
+                Name = "Team Demo",
+                Description = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged."
+            };
+            //set customer password
+            await InsertInstallationDataAsync(team);
+            var teamManagerMap = new TeamMemberMap()
+            {
+                CustomerId = secondUser.Id,
+                TeamId = team.Id,
+                RoleTypeId = (int)RoleType.Manager
+            };
+            await InsertInstallationDataAsync(teamManagerMap);
+
+            var crTeamManager = await _customerRoleRepository.Table
+                .FirstOrDefaultAsync(customerRole => customerRole.SystemName == CustomerDefaults.ManagerRoleName);
+            if(crTeamManager != null){
+                await InsertInstallationDataAsync(new CustomerCustomerRoleMapping { CustomerId = secondUser.Id, CustomerRoleId = crTeamManager.Id });
+            }
+
             //third user
-            var thirdUserEmail = "arthur_holmes@ixcms.com";
+            var thirdUserEmail = "arthur_holmes@demo.com";
             var thirdUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -475,18 +488,38 @@ namespace AssetForge.Services.Installation
             await InsertInstallationDataAsync(new CustomerAddressMapping { CustomerId = thirdUser.Id, AddressId = defaultThirdUserAddress.Id });
             await InsertInstallationDataAsync(new CustomerCustomerRoleMapping { CustomerId = thirdUser.Id, CustomerRoleId = crRegistered.Id });
 
+            var teamManagerMap2 = new TeamMemberMap()
+            {
+                CustomerId = secondUser.Id,
+                TeamId = team.Id,
+                RoleTypeId = (int)RoleType.Employee
+            };
+            await InsertInstallationDataAsync(teamManagerMap2);
+
+            var teamMemberTask = new TeamTask()
+            {
+                Title = "Task Demo",
+                Description = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.",
+                AssignedToTeamMemberMapId = teamManagerMap2.Id,
+                TaskStatusId = (int) TeamTaskStatus.Todo,
+                CreatedByUserId = secondUser.Id,
+                DueDateUtc = DateTime.UtcNow.AddDays(7),
+                CreatedDateUtc = DateTime.UtcNow
+            };
+            await InsertInstallationDataAsync(teamMemberTask);
+
             //set customer password
             await InsertInstallationDataAsync(new CustomerPassword
             {
                 CustomerId = thirdUser.Id,
-                Password = "123456",
+                Password = "Employee123!",
                 PasswordFormat = PasswordFormat.Clear,
                 PasswordSalt = string.Empty,
                 CreatedOnUtc = DateTime.UtcNow
             });
 
             //fourth user
-            var fourthUserEmail = "james_pan@ixcms.com";
+            var fourthUserEmail = "james_pan@demo.com";
             var fourthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -526,14 +559,14 @@ namespace AssetForge.Services.Installation
             await InsertInstallationDataAsync(new CustomerPassword
             {
                 CustomerId = fourthUser.Id,
-                Password = "123456",
+                Password = "Employee123!",
                 PasswordFormat = PasswordFormat.Clear,
                 PasswordSalt = string.Empty,
                 CreatedOnUtc = DateTime.UtcNow
             });
 
             //fifth user
-            var fifthUserEmail = "brenda_lindgren@ixcms.com";
+            var fifthUserEmail = "brenda_lindgren@demo.com";
             var fifthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -574,14 +607,14 @@ namespace AssetForge.Services.Installation
             await InsertInstallationDataAsync(new CustomerPassword
             {
                 CustomerId = fifthUser.Id,
-                Password = "123456",
+                Password = "Employee123!",
                 PasswordFormat = PasswordFormat.Clear,
                 PasswordSalt = string.Empty,
                 CreatedOnUtc = DateTime.UtcNow
             });
 
             //sixth user
-            var sixthUserEmail = "victoria_victoria@ixcms.com";
+            var sixthUserEmail = "victoria_victoria@demo.com";
             var sixthUser = new Customer
             {
                 CustomerGuid = Guid.NewGuid(),
@@ -622,7 +655,7 @@ namespace AssetForge.Services.Installation
             await InsertInstallationDataAsync(new CustomerPassword
             {
                 CustomerId = sixthUser.Id,
-                Password = "123456",
+                Password = "Employee123!",
                 PasswordFormat = PasswordFormat.Clear,
                 PasswordSalt = string.Empty,
                 CreatedOnUtc = DateTime.UtcNow
@@ -641,10 +674,10 @@ namespace AssetForge.Services.Installation
             };
             var crForumModerators = new CustomerRole
             {
-                Name = "Forum Moderators",
+                Name = "TeamManager",
                 Active = true,
                 IsSystemRole = true,
-                SystemName = CustomerDefaults.ForumModeratorsRoleName
+                SystemName = CustomerDefaults.ManagerRoleName
             };
             var crRegistered = new CustomerRole
             {
@@ -692,7 +725,7 @@ namespace AssetForge.Services.Installation
                 {
                     FirstName = "John",
                     LastName = "Smith",
-                    PhoneNumber = "12345678",
+                    PhoneNumber = "Employee123!78",
                     Email = defaultUserEmail,
                     FaxNumber = string.Empty,
                     Company = "AssetForge Solutions Ltd",
@@ -806,294 +839,6 @@ namespace AssetForge.Services.Installation
                 Keyword = "gift",
                 SiteId = defaultSite.Id
             });
-        }
-
-        /// <returns>A task that represents the asynchronous operation</returns>
-        protected virtual async Task InstallEmailAccountsAsync()
-        {
-            var emailAccounts = new List<EmailAccount>
-            {
-                new() {
-                    Email = "test@mail.com",
-                    DisplayName = "Site name",
-                    Host = "smtp.mail.com",
-                    Port = 25,
-                    Username = "123",
-                    Password = "123",
-                    EnableSsl = false
-                }
-            };
-
-            await InsertInstallationDataAsync(emailAccounts);
-        }
-
-        /// <returns>A task that represents the asynchronous operation</returns>
-        protected virtual async Task InstallMessageTemplatesAsync()
-        {
-            var eaGeneral = _emailAccountRepository.Table.FirstOrDefault() ?? throw new Exception("Default email account cannot be loaded");
-
-            var messageTemplates = new List<MessageTemplate>
-            {
-                new() {
-                    Name = MessageTemplateSystemNames.BLOG_COMMENT_SITE_OWNER_NOTIFICATION,
-                    Subject = "%Site.Name%. New blog comment.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new blog comment has been created for blog post \"%BlogComment.BlogPostTitle%\".{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CUSTOMER_EMAIL_VALIDATION_MESSAGE,
-                    Subject = "%Site.Name%. Email validation",
-                    Body = $"<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}To activate your account <a href=\"%Customer.AccountActivationURL%\">click here</a>.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Site.Name%{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CUSTOMER_EMAIL_REVALIDATION_MESSAGE,
-                    Subject = "%Site.Name%. Email validation",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Hello %Customer.FullName%!{Environment.NewLine}<br />{Environment.NewLine}To validate your new email address <a href=\"%Customer.EmailRevalidationURL%\">click here</a>.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Site.Name%{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.PRIVATE_MESSAGE_NOTIFICATION,
-                    Subject = "%Site.Name%. You have received a new private message",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}You have received a new private message.{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CUSTOMER_PASSWORD_RECOVERY_MESSAGE,
-                    Subject = "%Site.Name%. Password recovery",
-                    Body = $"<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}To change your password <a href=\"%Customer.PasswordRecoveryURL%\">click here</a>.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Site.Name%{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CUSTOMER_WELCOME_MESSAGE,
-                    Subject = "Welcome to %Site.Name%",
-                    Body = $"We welcome you to <a href=\"%Site.URL%\"> %Site.Name%</a>.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}You can now take part in the various services we have to offer you. Some of these services include:{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Permanent Cart - Any products added to your online cart remain there until you remove them, or check them out.{Environment.NewLine}<br />{Environment.NewLine}Address Book - We can now deliver your products to another address other than yours! This is perfect to send birthday gifts direct to the birthday-person themselves.{Environment.NewLine}<br />{Environment.NewLine}Order History - View your history of purchases that you have made with us.{Environment.NewLine}<br />{Environment.NewLine}Products Reviews - Share your opinions on products with our other customers.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}For help with any of our online services, please email the site-owner: <a href=\"mailto:%Site.Email%\">%Site.Email%</a>.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Note: This email address was provided on our registration page. If you own the email and did not register on our site, please send an email to <a href=\"mailto:%Site.Email%\">%Site.Email%</a>.{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.NEW_FORUM_POST_MESSAGE,
-                    Subject = "%Site.Name%. New Post Notification.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new post has been created in the page <a href=\"%Forums.PageURL%\">\"%Forums.PageName%\"</a> at <a href=\"%Forums.ForumURL%\">\"%Forums.ForumName%\"</a> forum.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Click <a href=\"%Forums.PageURL%\">here</a> for more info.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Post author: %Forums.PostAuthor%{Environment.NewLine}<br />{Environment.NewLine}Post body: %Forums.PostBody%{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.NEW_FORUM_TOPIC_MESSAGE,
-                    Subject = "%Site.Name%. New Page Notification.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new page <a href=\"%Forums.PageURL%\">\"%Forums.PageName%\"</a> has been created at <a href=\"%Forums.ForumURL%\">\"%Forums.ForumName%\"</a> forum.{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Click <a href=\"%Forums.PageURL%\">here</a> for more info.{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CUSTOMER_REGISTERED_SITE_OWNER_NOTIFICATION,
-                    Subject = "%Site.Name%. New customer registration",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new customer registered with your site. Below are the customer's details:{Environment.NewLine}<br />{Environment.NewLine}Full name: %Customer.FullName%{Environment.NewLine}<br />{Environment.NewLine}Email: %Customer.Email%{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new()
-                {
-                    Name = MessageTemplateSystemNames.DELETE_CUSTOMER_REQUEST_SITE_OWNER_NOTIFICATION,
-                    Subject = "%Site.Name%. New request to delete customer (GDPR)",
-                    Body = $"%Customer.Email% has requested account deletion. You can consider this in the admin area.",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.NEWS_COMMENT_SITE_OWNER_NOTIFICATION,
-                    Subject = "%Site.Name%. New news comment.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Site.URL%\">%Site.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new news comment has been created for news \"%NewsComment.NewsTitle%\".{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.NEWSLETTER_SUBSCRIPTION_ACTIVATION_MESSAGE,
-                    Subject = "%Site.Name%. Subscription activation message.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%NewsLetterSubscription.ActivationUrl%\">Click here to confirm your subscription to our list.</a>{Environment.NewLine}</p>{Environment.NewLine}<p>{Environment.NewLine}If you received this email by mistake, simply delete it.{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.NEWSLETTER_SUBSCRIPTION_DEACTIVATION_MESSAGE,
-                    Subject = "%Site.Name%. Subscription deactivation message.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%NewsLetterSubscription.DeactivationUrl%\">Click here to unsubscribe from our newsletter.</a>{Environment.NewLine}</p>{Environment.NewLine}<p>{Environment.NewLine}If you received this email by mistake, simply delete it.{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
-                    Name = MessageTemplateSystemNames.CONTACT_US_MESSAGE,
-                    Subject = "%Site.Name%. Contact us",
-                    Body = $"<p>{Environment.NewLine}%ContactUs.Body%{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                }
-            };
-
-            await InsertInstallationDataAsync(messageTemplates);
-        }
-
-        /// <returns>A task that represents the asynchronous operation</returns>
-
-        protected virtual async Task InstallTopicsAsync()
-        {
-            var defaultTopicTemplate =
-                _topicTemplateRepository.Table.FirstOrDefault(tt => tt.Name == "Default template") ?? throw new Exception("Topic template cannot be loaded");
-
-            var topics = new List<Topic>
-            {
-                new() {
-                    SystemName = "AboutUs",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    IncludeInFooterColumn1 = true,
-                    DisplayOrder = 20,
-                    Published = true,
-                    Title = "About us",
-                    Body =
-                        "<p>Put your &quot;About Us&quot; information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "CheckoutAsGuestOrRegister",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = string.Empty,
-                    Body =
-                        "<p><strong>Register and save time!</strong><br />Register with us for future convenience:</p><ul><li>Fast and easy check out</li><li>Easy access to your order history and status</li></ul>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "ConditionsOfUse",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    IncludeInFooterColumn1 = true,
-                    DisplayOrder = 15,
-                    Published = true,
-                    Title = "Conditions of Use",
-                    Body = "<p>Put your conditions of use information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "ContactUs",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = string.Empty,
-                    Body = "<p>Put your contact information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "ForumWelcomeMessage",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = "Forums",
-                    Body = "<p>Put your welcome message here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "HomepageText",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = "Welcome to our store",
-                    Body =
-                        "<p>Online shopping is the process consumers go through to purchase products or services over the Internet. You can edit this in the admin site.</p><p>If you have questions, see the <a href=\"http://docs.nopcommerce.com/\">Documentation</a>, or post in the <a href=\"https://www.nopcommerce.com/boards/\">Forums</a> at <a href=\"https://www.nopcommerce.com\">nopCommerce.com</a></p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "LoginRegistrationInfo",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = "About login / registration",
-                    Body =
-                        "<p>Put your login / registration information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "PrivacyInfo",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    IncludeInFooterColumn1 = true,
-                    DisplayOrder = 10,
-                    Published = true,
-                    Title = "Privacy notice",
-                    Body = "<p>Put your privacy policy information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "PageNotFound",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = string.Empty,
-                    Body =
-                        "<p><strong>The page you requested was not found, and we have a fine guess why.</strong></p><ul><li>If you typed the URL directly, please make sure the spelling is correct.</li><li>The page no longer exists. In this case, we profusely apologize for the inconvenience and for any damage this may cause.</li></ul>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "ShippingInfo",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    IncludeInFooterColumn1 = true,
-                    DisplayOrder = 5,
-                    Published = true,
-                    Title = "Shipping & returns",
-                    Body =
-                        "<p>Put your shipping &amp; returns information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "ApplyVendor",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = string.Empty,
-                    Body = "<p>Put your apply vendor instructions here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                },
-                new() {
-                    SystemName = "VendorTermsOfService",
-                    IncludeInSitemap = false,
-                    IsPasswordProtected = false,
-                    IncludeInFooterColumn1 = false,
-                    DisplayOrder = 1,
-                    Published = true,
-                    Title = "Terms of services for vendors",
-                    Body = "<p>Put your terms of service information here. You can edit this in the admin site.</p>",
-                    TopicTemplateId = defaultTopicTemplate.Id
-                }
-            };
-
-            await InsertInstallationDataAsync(topics);
-
-            //search engine names
-            foreach (var topic in topics)
-            {
-                await InsertInstallationDataAsync(new UrlRecord
-                {
-                    EntityId = topic.Id,
-                    EntityName = nameof(Topic),
-                    LanguageId = 0,
-                    IsActive = true,
-                    Slug = await ValidateSeNameAsync(topic, !string.IsNullOrEmpty(topic.Title) ? topic.Title : topic.SystemName)
-                });
-            }
         }
 
         /// <returns>A task that represents the asynchronous operation</returns>
@@ -1329,20 +1074,6 @@ namespace AssetForge.Services.Installation
                 InstagramLink = "https://www.instagram.com/radiowavehub_official",
             });
 
-            await settingService.SaveSettingAsync(new ExternalAuthenticationSettings
-            {
-                RequireEmailValidation = false,
-                LogErrors = false
-            });
-
-            await settingService.SaveSettingAsync(new MessageTemplatesSettings
-            {
-                CaseInvariantReplacement = false,
-                Color1 = "#b9babe",
-                Color2 = "#ebecee",
-                Color3 = "#dde2e6"
-            });
-
             await settingService.SaveSettingAsync(new SecuritySettings
             {
                 EncryptionKey = CommonHelper.GenerateRandomDigitCode(16),
@@ -1358,14 +1089,6 @@ namespace AssetForge.Services.Installation
             {
                 DefaultSiteTimeZoneId = string.Empty,
                 AllowCustomersToSetTimeZone = false
-            });
-
-            var eaGeneral = _emailAccountRepository.Table.FirstOrDefault() ?? throw new Exception("Default email account cannot be loaded");
-            await settingService.SaveSettingAsync(new EmailAccountSettings { DefaultEmailAccountId = eaGeneral.Id });
-
-            await settingService.SaveSettingAsync(new WidgetSettings
-            {
-                ActiveWidgetSystemNames = ["Widgets.NivoSlider"]
             });
 
             await settingService.SaveSettingAsync(new DisplayDefaultMenuItemSettings
@@ -1410,7 +1133,6 @@ namespace AssetForge.Services.Installation
                 ShowOnRegistrationPage = false,
             });
 
-            await settingService.SaveSettingAsync(new MessagesSettings { UsePopupNotifications = false });
 
             await settingService.SaveSettingAsync(new ProxySettings
             {
@@ -2269,21 +1991,6 @@ namespace AssetForge.Services.Installation
         }
 
         /// <returns>A task that represents the asynchronous operation</returns>
-        protected virtual async Task InstallTopicTemplatesAsync()
-        {
-            var topicTemplates = new List<TopicTemplate>
-            {
-                new() {
-                    Name = "Default template",
-                    ViewPath = "TopicDetails",
-                    DisplayOrder = 1
-                }
-            };
-
-            await InsertInstallationDataAsync(topicTemplates);
-        }
-
-        /// <returns>A task that represents the asynchronous operation</returns>
         protected virtual async Task InstallScheduleTasksAsync()
         {
             var lastEnabledUtc = DateTime.UtcNow;
@@ -2360,9 +2067,6 @@ namespace AssetForge.Services.Installation
             await InstallSitesAsync();
             await InstallLanguagesAsync(languagePackInfo, cultureInfo, regionInfo);
             await InstallCountriesAndStatesAsync();
-            await InstallEmailAccountsAsync();
-            await InstallMessageTemplatesAsync();
-            await InstallTopicsAsync();
             await InstallSettingsAsync(regionInfo);
             await InstallCustomersAndUsersAsync(defaultUserEmail, defaultUserPassword);
             await InstallActivityLogTypesAsync();

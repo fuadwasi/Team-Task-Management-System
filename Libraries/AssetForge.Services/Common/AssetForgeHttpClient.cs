@@ -1,9 +1,7 @@
 ﻿using AssetForge.Core;
 using AssetForge.Core.Domain.Common;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Rss;
 using AssetForge.Services.Localization;
-using AssetForge.Services.Messages;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
 using System.Net;
@@ -18,9 +16,7 @@ public partial class AssetForgeHttpClient
     #region Fields
 
     protected readonly AdminAreaSettings _adminAreaSettings;
-    protected readonly EmailAccountSettings _emailAccountSettings;
     protected readonly HttpClient _httpClient;
-    protected readonly IEmailAccountService _emailAccountService;
     protected readonly IHttpContextAccessor _httpContextAccessor;
     protected readonly ILanguageService _languageService;
     protected readonly IWebHelper _webHelper;
@@ -31,9 +27,7 @@ public partial class AssetForgeHttpClient
     #region Ctor
 
     public AssetForgeHttpClient(AdminAreaSettings adminAreaSettings,
-        EmailAccountSettings emailAccountSettings,
         HttpClient client,
-        IEmailAccountService emailAccountService,
         IHttpContextAccessor httpContextAccessor,
         ILanguageService languageService,
         IWebHelper webHelper,
@@ -45,9 +39,7 @@ public partial class AssetForgeHttpClient
         client.DefaultRequestHeaders.Add(HeaderNames.UserAgent, $"ix-{AssetForgeVersion.CURRENT_VERSION}");
 
         _adminAreaSettings = adminAreaSettings;
-        _emailAccountSettings = emailAccountSettings;
         _httpClient = client;
-        _emailAccountService = emailAccountService;
         _httpContextAccessor = httpContextAccessor;
         _languageService = languageService;
         _webHelper = webHelper;
@@ -68,34 +60,6 @@ public partial class AssetForgeHttpClient
     public virtual async Task PingAsync()
     {
         await _httpClient.GetStringAsync("/");
-    }
-
-    /// <summary>
-    /// Check the current site for license compliance
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the asynchronous task whose result contains the license check details
-    /// </returns>
-    public virtual async Task<string> GetLicenseCheckDetailsAsync()
-    {
-        var isLocal = _webHelper.IsLocalRequest(_httpContextAccessor.HttpContext.Request);
-        var siteUrl = _webHelper.GetSiteLocation();
-        if (!_adminAreaSettings.CheckLicense || isLocal || siteUrl.Contains("localhost"))
-            return string.Empty;
-
-        var emailAccount = await _emailAccountService.GetEmailAccountByIdAsync(_emailAccountSettings.DefaultEmailAccountId)
-                           ?? (await _emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault();
-        var language = _languageService.GetTwoLetterIsoLanguageName(await _workContext.GetWorkingLanguageAsync());
-        var url = string.Format(CommonDefaults.AssetForgeLicenseCheckPath,
-            siteUrl,
-            AssetForgeVersion.FULL_VERSION,
-            WebUtility.UrlEncode(emailAccount.Email),
-            language).ToLowerInvariant();
-
-        _httpClient.Timeout = TimeSpan.FromSeconds(3);
-
-        return await _httpClient.GetStringAsync(url);
     }
 
     /// <summary>

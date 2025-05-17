@@ -6,7 +6,6 @@ using AssetForge.Services.Authentication.MultiFactor;
 using AssetForge.Services.Common;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Security;
 using AssetForge.Services.Sites;
 using Microsoft.AspNetCore.Mvc;
@@ -32,15 +31,11 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly ILocalizationService _localizationService;
     protected readonly IMultiFactorAuthenticationPluginManager _multiFactorAuthenticationPluginManager;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
-    protected readonly INotificationService _notificationService;
     protected readonly IPermissionService _permissionService;
     protected readonly ISiteContext _siteContext;
     protected readonly ISiteService _siteService;
     protected readonly IUrlHelperFactory _urlHelperFactory;
     protected readonly IWorkContext _workContext;
-    protected readonly IWorkflowMessageService _workflowMessageService;
-    protected readonly RewardPointsSettings _rewardPointsSettings;
 
     #endregion
 
@@ -56,15 +51,11 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
         IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
         IMultiFactorAuthenticationPluginManager multiFactorAuthenticationPluginManager,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
-        INotificationService notificationService,
         IPermissionService permissionService,
         ISiteContext siteContext,
         ISiteService siteService,
         IUrlHelperFactory urlHelperFactory,
-        IWorkContext workContext,
-        IWorkflowMessageService workflowMessageService,
-        RewardPointsSettings rewardPointsSettings)
+        IWorkContext workContext)
     {
         _customerSettings = customerSettings;
         _actionContextAccessor = actionContextAccessor;
@@ -76,15 +67,11 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
         _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
         _multiFactorAuthenticationPluginManager = multiFactorAuthenticationPluginManager;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
-        _notificationService = notificationService;
         _permissionService = permissionService;
         _siteContext = siteContext;
         _siteService = siteService;
         _urlHelperFactory = urlHelperFactory;
         _workContext = workContext;
-        _workflowMessageService = workflowMessageService;
-        _rewardPointsSettings = rewardPointsSettings;
     }
 
     #endregion
@@ -179,9 +166,6 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
         var methodIsActive = await _multiFactorAuthenticationPluginManager.IsPluginActiveAsync(selectedProvider, customer, site.Id);
         if (methodIsActive)
             return CustomerLoginResults.MultiFactorAuthenticationRequired;
-
-        if (!string.IsNullOrEmpty(selectedProvider))
-            _notificationService.WarningNotification(await _localizationService.GetResourceAsync("MultiFactorAuthentication.Notification.SelectedMethodIsNotActive"));
 
         //update login details
         customer.FailedLoginAttempts = 0;
@@ -466,7 +450,6 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
 
             //email re-validation message
             await _genericAttributeService.SaveAttributeAsync(customer, CustomerDefaults.EmailRevalidationTokenAttribute, Guid.NewGuid().ToString());
-            await _workflowMessageService.SendCustomerEmailRevalidationMessageAsync(customer, (await _workContext.GetWorkingLanguageAsync()).Id);
         }
         else
         {
@@ -475,18 +458,6 @@ public partial class CustomerRegistrationService : ICustomerRegistrationService
 
             if (string.IsNullOrEmpty(oldEmail) || oldEmail.Equals(newEmail, StringComparison.InvariantCultureIgnoreCase))
                 return;
-
-            //update newsletter subscription (if required)
-            foreach (var site in await _siteService.GetAllSitesAsync())
-            {
-                var subscriptionOld = await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndSiteIdAsync(oldEmail, site.Id);
-
-                if (subscriptionOld == null)
-                    continue;
-
-                subscriptionOld.Email = newEmail;
-                await _newsLetterSubscriptionService.UpdateNewsLetterSubscriptionAsync(subscriptionOld);
-            }
         }
     }
 

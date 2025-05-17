@@ -1,14 +1,13 @@
-﻿using FluentMigrator;
-using FluentMigrator.SqlServer;
-using AssetForge.Core.Domain.Common;
+﻿using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Logging;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Domain.Seo;
 using AssetForge.Core.Domain.Sites;
+using FluentMigrator;
+using FluentMigrator.SqlServer;
 
 namespace AssetForge.Data.Migrations.Installation;
 
@@ -36,21 +35,6 @@ public class Indexes : ForwardOnlyMigration
         Create.Index("AssetForge_SiteMapping_EntityId_EntityName").OnTable(nameof(SiteMapping))
             .OnColumn(nameof(SiteMapping.EntityId)).Ascending()
             .OnColumn(nameof(SiteMapping.EntityName)).Ascending()
-            .WithOptions().NonClustered();
-
-        Create.Index("AssetForge_QueuedEmail_SentOnUtc_DontSendBeforeDateUtc_Extended").OnTable(nameof(QueuedEmail))
-            .OnColumn(nameof(QueuedEmail.SentOnUtc)).Ascending()
-            .OnColumn(nameof(QueuedEmail.DontSendBeforeDateUtc)).Ascending()
-            .WithOptions().NonClustered()
-            .Include(nameof(QueuedEmail.SentTries));
-
-        Create.Index("AssetForge_QueuedEmail_CreatedOnUtc").OnTable(nameof(QueuedEmail))
-            .OnColumn(nameof(QueuedEmail.CreatedOnUtc)).Descending()
-            .WithOptions().NonClustered();
-
-        Create.Index("AssetForge_NewsletterSubscription_Email_SiteId").OnTable(nameof(NewsLetterSubscription))
-            .OnColumn(nameof(NewsLetterSubscription.Email)).Ascending()
-            .OnColumn(nameof(NewsLetterSubscription.SiteId)).Ascending()
             .WithOptions().NonClustered();
 
         Create.Index("AssetForge_Log_CreatedOnUtc").OnTable(nameof(Log))

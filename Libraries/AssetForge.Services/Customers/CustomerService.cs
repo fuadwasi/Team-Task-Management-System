@@ -1096,20 +1096,6 @@ public partial class CustomerService : ICustomerService
     }
 
     /// <summary>
-    /// Gets a value indicating whether customer is a forum moderator
-    /// </summary>
-    /// <param name="customer">Customer</param>
-    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the result
-    /// </returns>
-    public virtual async Task<bool> IsForumModeratorAsync(Customer customer, bool onlyActiveCustomerRoles = true)
-    {
-        return await IsInCustomerRoleAsync(customer, CustomerDefaults.ForumModeratorsRoleName, onlyActiveCustomerRoles);
-    }
-
-    /// <summary>
     /// Gets a value indicating whether customer is registered
     /// </summary>
     /// <param name="customer">Customer</param>

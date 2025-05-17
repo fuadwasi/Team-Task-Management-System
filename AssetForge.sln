@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentatio
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{B6A28E3D-3A22-4DC0-A949-96336DCF2AFE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{238BC29B-5391-4F58-B5DC-B71D3E260480}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetForge.Core", "Libraries\AssetForge.Core\AssetForge.Core.csproj", "{0C622920-1F8D-40AD-BEE3-C21F10465B6D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssetForge.Data", "Libraries\AssetForge.Data\AssetForge.Data.csproj", "{B8B87CE6-0399-4354-92A6-007C02A5304F}"

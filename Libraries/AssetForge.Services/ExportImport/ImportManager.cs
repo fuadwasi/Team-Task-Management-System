@@ -1,10 +1,8 @@
-﻿using ClosedXML.Excel;
-using AssetForge.Core;
+﻿using AssetForge.Core;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Media;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Http;
 using AssetForge.Core.Infrastructure;
@@ -16,9 +14,9 @@ using AssetForge.Services.ExportImport.Help;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
 using AssetForge.Services.Media;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Sites;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -42,7 +40,6 @@ public partial class ImportManager : IImportManager
     protected readonly ILocalizationService _localizationService;
     protected readonly ILocalizedEntityService _localizedEntityService;
     protected readonly ILogger _logger;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
     protected readonly IAssetForgeFileProvider _fileProvider;
     protected readonly IPictureService _pictureService;
     protected readonly IServiceScopeFactory _serviceScopeFactory;
@@ -72,7 +69,6 @@ public partial class ImportManager : IImportManager
         ILocalizationService localizationService,
         ILocalizedEntityService localizedEntityService,
         ILogger logger,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
         IAssetForgeFileProvider fileProvider,
         IPictureService pictureService,
         IServiceScopeFactory serviceScopeFactory,
@@ -98,7 +94,6 @@ public partial class ImportManager : IImportManager
         _localizationService = localizationService;
         _localizedEntityService = localizedEntityService;
         _logger = logger;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
         _pictureService = pictureService;
         _serviceScopeFactory = serviceScopeFactory;
         _stateProvinceService = stateProvinceService;
@@ -296,13 +291,6 @@ public partial class ImportManager : IImportManager
 
     #region Methods
 
-    /// <summary>
-    /// Get excel workbook metadata
-    /// </summary>
-    /// <typeparam name="T">Type of object</typeparam>
-    /// <param name="workbook">Excel workbook</param>
-    /// <param name="languages">Languages</param>
-    /// <returns>Workbook metadata</returns>
     public static WorkbookMetadata<T> GetWorkbookMetadata<T>(IXLWorkbook workbook, IList<Language> languages)
     {
         // get the first worksheet in the workbook
@@ -370,11 +358,6 @@ public partial class ImportManager : IImportManager
         };
     }
 
-    /// <summary>
-    /// Import customers from XLSX file
-    /// </summary>
-    /// <param name="stream">Stream</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
     public virtual async Task ImportCustomersFromXlsxAsync(Stream stream)
     {
         using var workbook = new XLWorkbook(stream);
@@ -586,88 +569,6 @@ public partial class ImportManager : IImportManager
             string.Format(await _localizationService.GetResourceAsync("ActivityLog.ImportCustomers"), iRow - 2));
     }
 
-    /// <summary>
-    /// Import newsletter subscribers from TXT file
-    /// </summary>
-    /// <param name="stream">Stream</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the number of imported subscribers
-    /// </returns>
-    public virtual async Task<int> ImportNewsletterSubscribersFromTxtAsync(Stream stream)
-    {
-        var count = 0;
-        using (var reader = new StreamReader(stream))
-            while (!reader.EndOfStream)
-            {
-                var line = await reader.ReadLineAsync();
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-                var tmp = line.Split(',');
-
-                if (tmp.Length > 3)
-                    throw new AssetForgeException("Wrong file format");
-
-                var isActive = true;
-
-                var site = await _siteContext.GetCurrentSiteAsync();
-                var siteId = site.Id;
-
-                //"email" field specified
-                var email = tmp[0].Trim();
-
-                if (!CommonHelper.IsValidEmail(email))
-                    continue;
-
-                //"active" field specified
-                if (tmp.Length >= 2)
-                    isActive = bool.Parse(tmp[1].Trim());
-
-                //"siteId" field specified
-                if (tmp.Length == 3)
-                    siteId = int.Parse(tmp[2].Trim());
-
-                //import
-                var subscription = await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndSiteIdAsync(email, siteId);
-                if (subscription != null)
-                {
-                    subscription.Email = email;
-                    subscription.Active = isActive;
-                    await _newsLetterSubscriptionService.UpdateNewsLetterSubscriptionAsync(subscription);
-                }
-                else
-                {
-                    var customer = await _customerService.GetCustomerByEmailAsync(email);
-                    subscription = new NewsLetterSubscription
-                    {
-                        Active = isActive,
-                        CreatedOnUtc = DateTime.UtcNow,
-                        Email = email,
-                        SiteId = siteId,
-                        LanguageId = customer?.LanguageId ?? site.DefaultLanguageId,
-                        NewsLetterSubscriptionGuid = Guid.NewGuid()
-                    };
-                    await _newsLetterSubscriptionService.InsertNewsLetterSubscriptionAsync(subscription);
-                }
-
-                count++;
-            }
-
-        await _customerActivityService.InsertActivityAsync("ImportNewsLetterSubscriptions",
-            string.Format(await _localizationService.GetResourceAsync("ActivityLog.ImportNewsLetterSubscriptions"), count));
-
-        return count;
-    }
-
-    /// <summary>
-    /// Import states from TXT file
-    /// </summary>
-    /// <param name="stream">Stream</param>
-    /// <param name="writeLog">Indicates whether to add logging</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the number of imported states
-    /// </returns>
     public virtual async Task<int> ImportStatesFromTxtAsync(Stream stream, bool writeLog = true)
     {
         var count = 0;
