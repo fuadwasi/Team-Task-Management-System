@@ -26,8 +26,7 @@
         var pluginNode = rootNode.ChildNodes.FirstOrDefault(x => x.SystemName == "Third party plugins");
         if (pluginNode?.Visible ?? false)
         {
-            pluginNode.Visible = pluginNode.ChildNodes.Any(x => x.Visible) 
-                &&  await permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins, customer);
+            pluginNode.Visible = pluginNode.ChildNodes.Any(x => x.Visible);
         }
 
         //display menu items

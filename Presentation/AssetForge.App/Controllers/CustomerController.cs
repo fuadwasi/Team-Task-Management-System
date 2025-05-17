@@ -23,7 +23,6 @@ using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
 using AssetForge.Services.Media;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Security;
 using AssetForge.Web.Framework;
 using AssetForge.Web.Framework.Mvc.Filters;
@@ -59,19 +58,15 @@ public partial class CustomerController : BasePublicController
     protected readonly IDownloadService _downloadService;
     protected readonly IEventPublisher _eventPublisher;
     protected readonly IExportManager _exportManager;
-    protected readonly IExternalAuthenticationService _externalAuthenticationService;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly ILocalizationService _localizationService;
     protected readonly ILogger _logger;
     protected readonly IMultiFactorAuthenticationPluginManager _multiFactorAuthenticationPluginManager;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
-    protected readonly INotificationService _notificationService;
     protected readonly IPermissionService _permissionService;
     protected readonly IPictureService _pictureService;
     protected readonly IStateProvinceService _stateProvinceService;
     protected readonly ISiteContext _siteContext;
     protected readonly IWorkContext _workContext;
-    protected readonly IWorkflowMessageService _workflowMessageService;
     protected readonly LocalizationSettings _localizationSettings;
     protected readonly MediaSettings _mediaSettings;
     protected readonly MultiFactorAuthenticationSettings _multiFactorAuthenticationSettings;
@@ -102,15 +97,12 @@ public partial class CustomerController : BasePublicController
         IDownloadService downloadService,
         IEventPublisher eventPublisher,
         //IExportManager exportManager,
-        IExternalAuthenticationService externalAuthenticationService,
         //IGdprService gdprService,
         IGenericAttributeService genericAttributeService,
         //IGiftCardService giftCardService,
         ILocalizationService localizationService,
         ILogger logger,
         IMultiFactorAuthenticationPluginManager multiFactorAuthenticationPluginManager,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
-        INotificationService notificationService,
         //IOrderService orderService,
         IPermissionService permissionService,
         IPictureService pictureService,
@@ -120,7 +112,6 @@ public partial class CustomerController : BasePublicController
         ISiteContext siteContext,
         //ITaxService taxService,
         IWorkContext workContext,
-        IWorkflowMessageService workflowMessageService,
         LocalizationSettings localizationSettings,
         MediaSettings mediaSettings,
         MultiFactorAuthenticationSettings multiFactorAuthenticationSettings,
@@ -146,15 +137,12 @@ public partial class CustomerController : BasePublicController
         _downloadService = downloadService;
         _eventPublisher = eventPublisher;
         //_exportManager = exportManager;
-        _externalAuthenticationService = externalAuthenticationService;
         //_gdprService = gdprService;
         _genericAttributeService = genericAttributeService;
         //_giftCardService = giftCardService;
         _localizationService = localizationService;
         _logger = logger;
         _multiFactorAuthenticationPluginManager = multiFactorAuthenticationPluginManager;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
-        _notificationService = notificationService;
         //_orderService = orderService;
         _permissionService = permissionService;
         _pictureService = pictureService;
@@ -164,7 +152,6 @@ public partial class CustomerController : BasePublicController
         _siteContext = siteContext;
         //_taxService = taxService;
         _workContext = workContext;
-        _workflowMessageService = workflowMessageService;
         _localizationSettings = localizationSettings;
         _mediaSettings = mediaSettings;
         _multiFactorAuthenticationSettings = multiFactorAuthenticationSettings;
@@ -403,7 +390,7 @@ public partial class CustomerController : BasePublicController
         {
             var fullName = await _customerService.GetCustomerFullNameAsync(customer);
             var message = await _localizationService.GetResourceAsync("Account.Login.AlreadyLogin");
-            _notificationService.SuccessNotification(string.Format(message, _htmlEncoder.Encode(fullName)));
+            //_notificationService.SuccessNotification(string.Format(message, _htmlEncoder.Encode(fullName)));
         }
 
         return View(model);

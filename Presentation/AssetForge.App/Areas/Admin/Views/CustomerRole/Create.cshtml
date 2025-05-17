@@ -25,7 +25,6 @@
                 <i class="far fa-save"></i>
                 @T("Admin.Common.SaveContinue")
             </button>
-            @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.CustomerRoleDetailsButtons, additionalData = Model })
         </div>
     </div>
     @await Html.PartialAsync("_CreateOrUpdate", Model)

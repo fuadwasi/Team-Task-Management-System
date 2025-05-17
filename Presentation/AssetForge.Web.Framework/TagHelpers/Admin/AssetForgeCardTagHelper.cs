@@ -30,16 +30,14 @@ public partial class AssetForgeCardTagHelper : TagHelper
     #region Fields
 
     protected readonly IViewComponentHelper _viewComponentHelper;
-    protected readonly IWidgetModelFactory _widgetModelFactory;
 
     #endregion
 
     #region Ctor
 
-    public AssetForgeCardTagHelper(IViewComponentHelper viewComponentHelper, IWidgetModelFactory widgetModelFactory)
+    public AssetForgeCardTagHelper(IViewComponentHelper viewComponentHelper)
     {
         _viewComponentHelper = viewComponentHelper;
-        _widgetModelFactory = widgetModelFactory;
     }
 
     #endregion
@@ -119,24 +117,9 @@ public partial class AssetForgeCardTagHelper : TagHelper
         //add heading and container to card
         card.InnerHtml.AppendHtml(cardHeading);
 
-        var modelsBefore = await _widgetModelFactory.PrepareRenderWidgetModelAsync(AdminWidgetZones.CardBefore, new WidgetCardModel { CardName = Name });
-
-        foreach (var model in modelsBefore)
-        {
-            var content = await _viewComponentHelper.InvokeAsync(model.WidgetViewComponent, model.WidgetViewComponentArguments);
-            card.InnerHtml.AppendHtml(content);
-        }
 
         var childContent = await output.GetChildContentAsync();
         card.InnerHtml.AppendHtml(childContent.GetContent());
-
-        var modelsAfter = await _widgetModelFactory.PrepareRenderWidgetModelAsync(AdminWidgetZones.CardAfter, new WidgetCardModel { CardName = Name });
-
-        foreach (var model in modelsAfter)
-        {
-            var content = await _viewComponentHelper.InvokeAsync(model.WidgetViewComponent, model.WidgetViewComponentArguments);
-            card.InnerHtml.AppendHtml(content);
-        }
 
         output.Content.AppendHtml(await card.RenderHtmlContentAsync());
     }

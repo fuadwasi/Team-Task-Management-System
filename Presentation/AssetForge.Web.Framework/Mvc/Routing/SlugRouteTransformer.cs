@@ -1,9 +1,6 @@
 ﻿using AssetForge.Core;
-using AssetForge.Core.Domain.Catalog;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Seo;
-
-using AssetForge.Core.Domain.Vendors;
 using AssetForge.Core.Events;
 using AssetForge.Core.Http;
 using AssetForge.Services.Localization;
@@ -122,17 +119,17 @@ public partial class SlugRouteTransformer : DynamicRouteValueTransformer
 
 
 
-            case var name when name.Equals(nameof(Vendor), StringComparison.InvariantCultureIgnoreCase):
-                RouteToAction(values, "Catalog", "Vendor", slug, (RoutingDefaults.RouteValue.VendorId, urlRecord.EntityId));
-                return;
+            //case var name when name.Equals(nameof(Vendor), StringComparison.InvariantCultureIgnoreCase):
+            //    RouteToAction(values, "Catalog", "Vendor", slug, (RoutingDefaults.RouteValue.VendorId, urlRecord.EntityId));
+            //    return;
 
-            case var name when name.Equals(nameof(Manufacturer), StringComparison.InvariantCultureIgnoreCase):
-                RouteToAction(values, "Catalog", "Manufacturer", slug, (RoutingDefaults.RouteValue.ManufacturerId, urlRecord.EntityId));
-                return;
+            //case var name when name.Equals(nameof(Manufacturer), StringComparison.InvariantCultureIgnoreCase):
+            //    RouteToAction(values, "Catalog", "Manufacturer", slug, (RoutingDefaults.RouteValue.ManufacturerId, urlRecord.EntityId));
+            //    return;
 
-            case var name when name.Equals(nameof(Topic), StringComparison.InvariantCultureIgnoreCase):
-                RouteToAction(values, "Topic", "TopicDetails", slug, (RoutingDefaults.RouteValue.TopicId, urlRecord.EntityId));
-                return;
+            //case var name when name.Equals(nameof(Topic), StringComparison.InvariantCultureIgnoreCase):
+            //    RouteToAction(values, "Topic", "TopicDetails", slug, (RoutingDefaults.RouteValue.TopicId, urlRecord.EntityId));
+            //    return;
         }
     }
 

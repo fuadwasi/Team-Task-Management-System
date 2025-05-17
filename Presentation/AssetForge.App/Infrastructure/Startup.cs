@@ -25,16 +25,11 @@ public partial class Startup : IAssetForgeStartup
         services.AddScoped<ICustomerModelFactory, CustomerModelFactory>();
         services.AddScoped<ICustomerAttributeModelFactory, CustomerAttributeModelFactory>();
         services.AddScoped<ICustomerRoleModelFactory, CustomerRoleModelFactory>();
-        services.AddScoped<IEmailAccountModelFactory, EmailAccountModelFactory>();
-        services.AddScoped<IExternalAuthenticationMethodModelFactory, ExternalAuthenticationMethodModelFactory>();
         services.AddScoped<IHomeModelFactory, HomeModelFactory>();
         services.AddScoped<ILanguageModelFactory, LanguageModelFactory>();
         services.AddScoped<ILocalizedModelFactory, LocalizedModelFactory>();
         services.AddScoped<ILogModelFactory, LogModelFactory>();
-        services.AddScoped<IMessageTemplateModelFactory, MessageTemplateModelFactory>();
         services.AddScoped<IMultiFactorAuthenticationMethodModelFactory, MultiFactorAuthenticationMethodModelFactory>();
-        services.AddScoped<IPluginModelFactory, PluginModelFactory>();
-        services.AddScoped<IQueuedEmailModelFactory, QueuedEmailModelFactory>();
         services.AddScoped<IScheduleTaskModelFactory, ScheduleTaskModelFactory>();
         services.AddScoped<ISecurityModelFactory, SecurityModelFactory>();
         services.AddScoped<ISettingModelFactory, SettingModelFactory>();

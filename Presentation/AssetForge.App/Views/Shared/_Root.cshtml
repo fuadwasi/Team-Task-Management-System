@@ -2,7 +2,6 @@
 @{
     Layout = "_Root.Head";
 }
-@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.BodyStartHtmlTagAfter })
 @{
     await Html.RenderPartialAsync("_Notifications");
 }
@@ -24,7 +23,6 @@
         @* @await Component.InvokeAsync(typeof(TopMenuViewComponent)) *@
     </div>
     <div class="master-wrapper-content" id="main" role="main">
-        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ContentBefore })
 
         @if (IsSectionDefined("Breadcrumb"))
         {
@@ -33,9 +31,7 @@
         <div class="master-column-wrapper">
             @RenderBody()
         </div>
-        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ContentAfter })
     </div>
     @* @await Component.InvokeAsync(typeof(FooterViewComponent)) *@
 </div>
 @* @await Component.InvokeAsync(typeof(EuCookieLawViewComponent)) *@
-@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.BodyEndHtmlTagBefore })

@@ -61,7 +61,6 @@ namespace AssetForge.Web.Framework.Infrastructure
             //services
             services.AddScoped<IAclSupportedModelFactory, AclSupportedModelFactory>();
             services.AddScoped<ISiteMappingSupportedModelFactory, SiteMappingSupportedModelFactory>();
-            services.AddScoped<IWidgetModelFactory, WidgetModelFactory>();
 
             //file provider
             services.AddScoped<IAssetForgeFileProvider, AssetForgeFileProvider>();

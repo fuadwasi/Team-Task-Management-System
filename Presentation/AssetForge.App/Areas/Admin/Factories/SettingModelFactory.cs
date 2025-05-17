@@ -188,12 +188,11 @@ public partial class SettingModelFactory : ISettingModelFactory
     {
         //load settings for a chosen site scope
         var siteId = await _siteContext.GetActiveSiteScopeConfigurationAsync();
-        var externalAuthenticationSettings = await _settingService.LoadSettingAsync<ExternalAuthenticationSettings>(siteId);
 
         //fill in model values from the entity
         var model = new ExternalAuthenticationSettingsModel
         {
-            AllowCustomersToRemoveAssociations = externalAuthenticationSettings.AllowCustomersToRemoveAssociations
+            AllowCustomersToRemoveAssociations = false
         };
 
         return model;

@@ -27,7 +27,6 @@
                     @* <ix-card asp-name="customer-impersonate" asp-icon="fas fa-shopping-basket" asp-title="@T("Admin.Customers.Customers.Impersonate")" asp-hide-block-attribute-name="@hideImpersonateBlockAttributeName" asp-hide="@hideImpersonateBlock" asp-advanced="true">@await Html.PartialAsync("_CreateOrUpdate.Impersonate", Model)</ix-card> *@
                 }
 
-                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.CustomerDetailsBlock, additionalData = Model })
             </ix-cards>
         </div>
     </div>

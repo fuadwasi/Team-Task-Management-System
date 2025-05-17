@@ -1,14 +1,9 @@
 ﻿using AssetForge.Core;
-using AssetForge.Core.Domain.Catalog;
 using AssetForge.Core.Domain.Seo;
-
-using AssetForge.Core.Domain.Vendors;
 using AssetForge.Services.Seo;
-using AssetForge.Services.Topics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
-using System.Numerics;
 
 namespace AssetForge.Web.Framework.Mvc.Routing;
 
@@ -23,7 +18,6 @@ public partial class UrlHelper : AssetForgeIUrlHelper
 
     //  protected readonly ICategoryService _categoryService;
     protected readonly ISiteContext _siteContext;
-    private readonly ITopicService _topicService;
     protected readonly IUrlHelperFactory _urlHelperFactory;
     protected readonly IUrlRecordService _urlRecordService;
 
@@ -35,14 +29,12 @@ public partial class UrlHelper : AssetForgeIUrlHelper
         IActionContextAccessor actionContextAccessor,
         //  ICategoryService categoryService,
         ISiteContext siteContext,
-        ITopicService topicService,
         IUrlHelperFactory urlHelperFactory,
         IUrlRecordService urlRecordService)
     {
         _actionContextAccessor = actionContextAccessor;
         // _categoryService = categoryService;
         _siteContext = siteContext;
-        _topicService = topicService;
         _urlHelperFactory = urlHelperFactory;
         _urlRecordService = urlRecordService;
     }
@@ -119,12 +111,6 @@ public partial class UrlHelper : AssetForgeIUrlHelper
         var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
         return typeof(TEntity) switch
         {
-            var entityType when entityType == typeof(Manufacturer)
-                => urlHelper.RouteUrl(RoutingDefaults.RouteName.Generic.Manufacturer, values, protocol, host, fragment),
-            var entityType when entityType == typeof(Vendor)
-                => urlHelper.RouteUrl(RoutingDefaults.RouteName.Generic.Vendor, values, protocol, host, fragment),
-            var entityType when entityType == typeof(Topic)
-                => urlHelper.RouteUrl(RoutingDefaults.RouteName.Generic.Topic, values, protocol, host, fragment),
             var entityType => urlHelper.RouteUrl(entityType.Name, values, protocol, host, fragment)
         };
     }
@@ -142,13 +128,7 @@ public partial class UrlHelper : AssetForgeIUrlHelper
     /// </returns>
     public virtual async Task<string> RouteTopicUrlAsync(string systemName, string protocol = null, string host = null, string fragment = null)
     {
-        var store = await _siteContext.GetCurrentSiteAsync();
-        var topic = await _topicService.GetTopicBySystemNameAsync(systemName, store.Id);
-        if (topic is null)
-            return string.Empty;
-
-        var seName = await _urlRecordService.GetSeNameAsync(topic);
-        return await RouteGenericUrlAsync<Topic>(new { SeName = seName }, protocol, host, fragment);
+        return string.Empty;
     }
 
     #endregion Methods

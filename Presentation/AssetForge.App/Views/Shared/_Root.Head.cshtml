@@ -45,7 +45,6 @@
     @AssetForgeHtml.GenerateCssFiles()
 
 
-    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeadHtmlTag })
     @AssetForgeHtml.GenerateCanonicalUrls()
     @* @await Component.InvokeAsync(typeof(NewsRssHeaderLinkViewComponent)) *@
     @* @await Component.InvokeAsync(typeof(BlogRssHeaderLinkViewComponent)) *@

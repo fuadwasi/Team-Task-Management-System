@@ -1,16 +1,12 @@
 ﻿using AssetForge.App.Areas.Admin.Models.Common;
 using AssetForge.App.Areas.Admin.Models.Customers;
 using AssetForge.App.Areas.Admin.Models.Directory;
-using AssetForge.App.Areas.Admin.Models.ExternalAuthentication;
 using AssetForge.App.Areas.Admin.Models.Localization;
 using AssetForge.App.Areas.Admin.Models.Logging;
 using AssetForge.App.Areas.Admin.Models.MultiFactorAuthentication;
-using AssetForge.App.Areas.Admin.Models.Plugins;
 using AssetForge.App.Areas.Admin.Models.Settings;
 using AssetForge.App.Areas.Admin.Models.Sites;
 using AssetForge.App.Areas.Admin.Models.Tasks;
-using AssetForge.App.Areas.Admin.Models.Templates;
-using AssetForge.App.Areas.Admin.Models.Topics;
 using AssetForge.Core.Configuration;
 using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Configuration;
@@ -529,9 +525,9 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
     }
     protected virtual void CreatePluginsMaps()
     {
-        CreateMap<PluginDescriptor, PluginModel>()
-            .ForMember(model => model.CanChangeEnabled, options => options.Ignore())
-            .ForMember(model => model.IsEnabled, options => options.Ignore());
+        //CreateMap<PluginDescriptor, PluginModel>()
+        //    .ForMember(model => model.CanChangeEnabled, options => options.Ignore())
+        //    .ForMember(model => model.IsEnabled, options => options.Ignore());
     }
 
     /// <summary>

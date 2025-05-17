@@ -17,6 +17,5 @@
         {
             <a href="@Model.EditPageUrl" class="manage-page">@T("Common.ManagePage")</a>
         }
-        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.AdminHeaderLinksAfter, additionalData = Model })
     </div>
 }

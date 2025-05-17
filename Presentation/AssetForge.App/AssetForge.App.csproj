@@ -23,30 +23,27 @@
 
   <ItemGroup>
     <Compile Remove="Areas\Admin\Models\tmp\**" />
+    <Compile Remove="Areas\Admin\Views\Tmp\**" />
     <Content Remove="Areas\Admin\Models\tmp\**" />
+    <Content Remove="Areas\Admin\Views\Tmp\**" />
     <EmbeddedResource Remove="Areas\Admin\Models\tmp\**" />
+    <EmbeddedResource Remove="Areas\Admin\Views\Tmp\**" />
     <None Remove="Areas\Admin\Models\tmp\**" />
+    <None Remove="Areas\Admin\Views\Tmp\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Areas\Admin\Views\Layout\_CreateOrUpdate.Info.cshtml" />
-    <Content Remove="Areas\Admin\Views\Layout\_CreateOrUpdate.WidgetMap.cshtml" />
     <Content Remove="Areas\Admin\Views\Shared\Components\File.cshtml" />
     <Content Remove="Views\Customer\MultiFactorAuthentication.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Areas\Admin\Validators\" />
-    <Folder Include="Areas\Admin\Views\Tmp\" />
     <Folder Include="Models\Boards\" />
     <Folder Include="Plugins\" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Areas\Admin\Views\ActivityLog\ActivityLogs.cshtml" />
-    <None Include="Areas\Admin\Views\ActivityLog\ActivityTypes.cshtml" />
-    <None Include="Areas\Admin\Views\Authentication\ExternalMethods.cshtml" />
-    <None Include="Areas\Admin\Views\Authentication\MultiFactorMethods.cshtml" />
     <None Include="Areas\Admin\Views\Common\Maintenance.cshtml" />
     <None Include="Areas\Admin\Views\Common\SeNames.cshtml" />
     <None Include="Areas\Admin\Views\Common\SystemInfo.cshtml" />
@@ -58,15 +55,6 @@
     <None Include="Areas\Admin\Views\Common\_Maintenance.DeleteGuests.cshtml" />
     <None Include="Areas\Admin\Views\Common\_Maintenance.DeleteMinificationCacheFiles.cshtml" />
     <None Include="Areas\Admin\Views\Common\_Maintenance.ReindexDatabaseTables.cshtml" />
-    <None Include="Areas\Admin\Views\Country\Create.cshtml" />
-    <None Include="Areas\Admin\Views\Country\Edit.cshtml" />
-    <None Include="Areas\Admin\Views\Country\List.cshtml" />
-    <None Include="Areas\Admin\Views\Country\StateCreatePopup.cshtml" />
-    <None Include="Areas\Admin\Views\Country\StateEditPopup.cshtml" />
-    <None Include="Areas\Admin\Views\Country\_CreateOrUpdate.cshtml" />
-    <None Include="Areas\Admin\Views\Country\_CreateOrUpdate.Info.cshtml" />
-    <None Include="Areas\Admin\Views\Country\_CreateOrUpdate.States.cshtml" />
-    <None Include="Areas\Admin\Views\Country\_CreateOrUpdateState.cshtml" />
     <None Include="Areas\Admin\Views\CustomerRole\Create.cshtml" />
     <None Include="Areas\Admin\Views\CustomerRole\Edit.cshtml" />
     <None Include="Areas\Admin\Views\CustomerRole\List.cshtml" />
@@ -80,28 +68,6 @@
     <None Include="Areas\Admin\Views\Customer\_CreateOrUpdate.Impersonate.cshtml" />
     <None Include="Areas\Admin\Views\Customer\_CreateOrUpdate.Info.cshtml" />
     <None Include="Areas\Admin\Views\Customer\_CustomerAttributes.cshtml" />
-    <None Include="Areas\Admin\Views\Language\Create.cshtml" />
-    <None Include="Areas\Admin\Views\Language\Edit.cshtml" />
-    <None Include="Areas\Admin\Views\Language\List.cshtml" />
-    <None Include="Areas\Admin\Views\Language\_CreateOrUpdate.cshtml" />
-    <None Include="Areas\Admin\Views\Language\_CreateOrUpdate.Info.cshtml" />
-    <None Include="Areas\Admin\Views\Language\_CreateOrUpdate.Resources.cshtml" />
-    <None Include="Areas\Admin\Views\Layout\_CreateOrUpdate.WidgetMap.cshtml" />
-    <None Include="Areas\Admin\Views\Layout\_CreateOrUpdate.Info.cshtml" />
-    <None Include="Areas\Admin\Views\MessageTemplate\Edit.cshtml" />
-    <None Include="Areas\Admin\Views\MessageTemplate\List.cshtml" />
-    <None Include="Areas\Admin\Views\MessageTemplate\TestTemplate.cshtml" />
-    <None Include="Areas\Admin\Views\MessageTemplate\_CreateOrUpdate.cshtml" />
-    <None Include="Areas\Admin\Views\OnlineCustomer\List.cshtml" />
-    <None Include="Areas\Admin\Views\Plugin\EditPopup.cshtml" />
-    <None Include="Areas\Admin\Views\Plugin\List.cshtml" />
-    <None Include="Areas\Admin\Views\Plugin\_CreateOrUpdatePlugin.cshtml" />
-    <None Include="Areas\Admin\Views\QueuedEmail\Edit.cshtml" />
-    <None Include="Areas\Admin\Views\QueuedEmail\List.cshtml" />
-    <None Include="Areas\Admin\Views\QueuedEmail\_CreateOrUpdate.cshtml" />
-    <None Include="Areas\Admin\Views\ScheduleTask\List.cshtml" />
-    <None Include="Areas\Admin\Views\Security\AccessDenied.cshtml" />
-    <None Include="Areas\Admin\Views\Security\Permissions.cshtml" />
     <None Include="Areas\Admin\Views\Shared\Components\AclDisabledWarning\Default.cshtml" />
     <None Include="Areas\Admin\Views\Shared\Components\AdminLanguageSelector\Default.cshtml" />
     <None Include="Areas\Admin\Views\Shared\Components\AdminWidget\Default.cshtml" />
@@ -124,8 +90,6 @@
     <None Include="Areas\Admin\Views\Shared\EditorTemplates\MultiSelectString.cshtml" />
     <None Include="Areas\Admin\Views\Shared\EditorTemplates\Picture.cshtml" />
     <None Include="Areas\Admin\Views\Shared\EditorTemplates\RichEditor.cshtml" />
-    <None Include="Areas\Admin\Views\Template\List.cshtml" />
-    <None Include="Areas\Admin\Views\Layout\List.cshtml" />
     <None Include="wwwroot\fonts\dropify\dropify.svg" />
     <None Include="wwwroot\lib_npm\admin-lte\plugins\select2\js\select2.full.min.js" />
     <None Include="wwwroot\lib_npm\admin-lte\plugins\select2\js\select2.min.js" />
