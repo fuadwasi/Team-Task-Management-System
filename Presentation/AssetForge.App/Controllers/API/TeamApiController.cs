@@ -96,5 +96,28 @@ namespace AssetForge.App.Controllers.API
             model.Description = team.Description;
             return OkWrap(model);
         }
+
+        [HttpGet("GetTeamList")]
+        public virtual async Task<IActionResult> GetTeamList([FromBody] BaseQueryModel<TeamSearchModel> queryModel)
+        {
+            if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageTeam))
+                return BadRequest();
+
+            var model = queryModel.Data;
+
+            var teams = await _teamService.GetAllTeamsAsync(
+                keyword: model.Keyword,
+                pageIndex: model.Page - 1,
+                pageSize: model.PageSize);
+
+            var teamModels = teams.Select(t => new TeamModel()
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Description = t.Description,
+            }).ToList();
+
+            return OkWrap(new TeamListModel() { Teams = teamModels });
+        }
     }
 }

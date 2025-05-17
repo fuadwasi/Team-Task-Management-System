@@ -12,4 +12,12 @@ namespace AssetForge.App.Models.Teams
         public string Description { get; set; }
         public IList<TeamMemberModel> TeamMembers { get; set; }
     }
+    public record TeamListModel : BaseModel
+    {
+        public TeamListModel()
+        {
+            Teams = new List<TeamModel>();
+        }
+        public IList<TeamModel> Teams { get; set; }
+    }
 }
