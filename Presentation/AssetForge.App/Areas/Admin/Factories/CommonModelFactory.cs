@@ -8,12 +8,9 @@ using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Events;
 using AssetForge.Core.Infrastructure;
 using AssetForge.Data;
-using AssetForge.Services.Authentication.External;
 using AssetForge.Services.Authentication.MultiFactor;
-using AssetForge.Services.Cms;
 using AssetForge.Services.Common;
 using AssetForge.Services.Customers;
-using AssetForge.Services.Directory;
 using AssetForge.Services.Events;
 using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
@@ -41,7 +38,6 @@ public partial class CommonModelFactory : ICommonModelFactory
 
     protected readonly AppSettings _appSettings;
     protected readonly IActionContextAccessor _actionContextAccessor;
-    protected readonly IAuthenticationPluginManager _authenticationPluginManager;
     protected readonly IBaseAdminModelFactory _baseAdminModelFactory;
     protected readonly ICustomerService _customerService;
     protected readonly IEventPublisher _eventPublisher;
@@ -70,7 +66,6 @@ public partial class CommonModelFactory : ICommonModelFactory
     protected readonly IUrlHelperFactory _urlHelperFactory;
     protected readonly IUrlRecordService _urlRecordService;
     protected readonly IWebHelper _webHelper;
-    protected readonly IWidgetPluginManager _widgetPluginManager;
     protected readonly IWorkContext _workContext;
     //protected readonly MeasureSettings _measureSettings;
     protected readonly AssetForgeHttpClient _ixHttpClient;
@@ -82,7 +77,6 @@ public partial class CommonModelFactory : ICommonModelFactory
 
     public CommonModelFactory(AppSettings appSettings,
         IActionContextAccessor actionContextAccessor,
-        IAuthenticationPluginManager authenticationPluginManager,
         IBaseAdminModelFactory baseAdminModelFactory,
         ICustomerService customerService,
         IEventPublisher eventPublisher,
@@ -102,14 +96,12 @@ public partial class CommonModelFactory : ICommonModelFactory
         IUrlHelperFactory urlHelperFactory,
         IUrlRecordService urlRecordService,
         IWebHelper webHelper,
-        IWidgetPluginManager widgetPluginManager,
         IWorkContext workContext,
         AssetForgeHttpClient ixHttpClient,
         ProxySettings proxySettings)
     {
         _appSettings = appSettings;
         _actionContextAccessor = actionContextAccessor;
-        _authenticationPluginManager = authenticationPluginManager;
         _baseAdminModelFactory = baseAdminModelFactory;
         _customerService = customerService;
         _eventPublisher = eventPublisher;
@@ -129,7 +121,6 @@ public partial class CommonModelFactory : ICommonModelFactory
         _urlHelperFactory = urlHelperFactory;
         _urlRecordService = urlRecordService;
         _webHelper = webHelper;
-        _widgetPluginManager = widgetPluginManager;
         _workContext = workContext;
         _ixHttpClient = ixHttpClient;
         _proxySettings = proxySettings;
@@ -389,16 +380,8 @@ public partial class CommonModelFactory : ICommonModelFactory
 
             switch (plugin)
             {
-                case IExternalAuthenticationMethod externalAuthenticationMethod:
-                    isEnabled = _authenticationPluginManager.IsPluginActive(externalAuthenticationMethod);
-                    break;
-
                 case IMultiFactorAuthenticationMethod multiFactorAuthenticationMethod:
                     isEnabled = _multiFactorAuthenticationPluginManager.IsPluginActive(multiFactorAuthenticationMethod);
-                    break;
-
-                case IWidgetPlugin widgetPlugin:
-                    isEnabled = _widgetPluginManager.IsPluginActive(widgetPlugin);
                     break;
             }
 

@@ -1,14 +1,9 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using AssetForge.App.Areas.Admin.Models.Attributes;
-using AssetForge.App.Areas.Admin.Models.Cms;
-using AssetForge.App.Areas.Admin.Models.Common;
+﻿using AssetForge.App.Areas.Admin.Models.Common;
 using AssetForge.App.Areas.Admin.Models.Customers;
 using AssetForge.App.Areas.Admin.Models.Directory;
 using AssetForge.App.Areas.Admin.Models.ExternalAuthentication;
 using AssetForge.App.Areas.Admin.Models.Localization;
 using AssetForge.App.Areas.Admin.Models.Logging;
-using AssetForge.App.Areas.Admin.Models.Messages;
 using AssetForge.App.Areas.Admin.Models.MultiFactorAuthentication;
 using AssetForge.App.Areas.Admin.Models.Plugins;
 using AssetForge.App.Areas.Admin.Models.Settings;
@@ -17,7 +12,6 @@ using AssetForge.App.Areas.Admin.Models.Tasks;
 using AssetForge.App.Areas.Admin.Models.Templates;
 using AssetForge.App.Areas.Admin.Models.Topics;
 using AssetForge.Core.Configuration;
-using AssetForge.Core.Domain.Attributes;
 using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Configuration;
 using AssetForge.Core.Domain.Customers;
@@ -25,20 +19,18 @@ using AssetForge.Core.Domain.Directory;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Logging;
 using AssetForge.Core.Domain.Media;
-using AssetForge.Core.Domain.Messages;
 using AssetForge.Core.Domain.ScheduleTasks;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Core.Domain.Seo;
 using AssetForge.Core.Domain.Sites;
-using AssetForge.Core.Domain.Topics;
 using AssetForge.Core.Infrastructure.Mapper;
 using AssetForge.Data.Configuration;
-using AssetForge.Services.Authentication.External;
 using AssetForge.Services.Authentication.MultiFactor;
-using AssetForge.Services.Cms;
 using AssetForge.Services.Plugins;
 using AssetForge.Web.Framework.Models;
 using AssetForge.Web.Framework.WebOptimizer;
+using AutoMapper;
+using AutoMapper.Internal;
 
 namespace AssetForge.App.Areas.Admin.Infrastructure.Mapper;
 
@@ -53,10 +45,8 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
     {
         //create specific maps
         CreateConfigMaps();
-        CreateAuthenticationMaps();
         CreateMultiFactorAuthenticationMaps();
         CreateBlogsMaps();
-        CreateCmsMaps();
         CreateCommonMaps();
         CreateCustomersMaps();
         CreateDirectoryMaps();
@@ -64,14 +54,12 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
         CreateLocalizationMaps();
         CreateLoggingMaps();
         CreateMediaMaps();
-        CreateMessagesMaps();
         CreatePluginsMaps();
         CreatePollsMaps();
         CreateSecurityMaps();
         CreateSeoMaps();
         CreateSitesMaps();
         CreateTasksMaps();
-        CreateTopicsMaps();
 
         //add some generic mapping rules
         this.Internal().ForAllMaps((mapConfiguration, map) =>
@@ -179,14 +167,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
     }
 
     /// <summary>
-    /// Create authentication maps 
-    /// </summary>
-    protected virtual void CreateAuthenticationMaps()
-    {
-        CreateMap<IExternalAuthenticationMethod, ExternalAuthenticationMethodModel>();
-    }
-
-    /// <summary>
     /// Create multi-factor authentication maps 
     /// </summary>
     protected virtual void CreateMultiFactorAuthenticationMaps()
@@ -233,28 +213,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
         //    .ForMember(model => model.PostsPageSize_OverrideForSite, options => options.Ignore())
         //    .ForMember(model => model.ShowHeaderRssUrl_OverrideForSite, options => options.Ignore());
         //CreateMap<BlogSettingsModel, BlogSettings>();
-    }
-
-    /// <summary>
-    /// Create CMS maps 
-    /// </summary>
-    protected virtual void CreateCmsMaps()
-    {
-        CreateMap<IWidgetPlugin, WidgetModel>()
-            .ForMember(model => model.WidgetViewComponentArguments, options => options.Ignore())
-            .ForMember(model => model.WidgetViewComponentName, options => options.Ignore());
-
-        CreateMap<WidgetAttributeMapping, WidgetAttributeMappingModel>()
-            .ReverseMap();
-
-        CreateMap<WidgetAttributeValue, WidgetAttributeValueModel>()
-            .ReverseMap();
-
-        CreateMap<PredefinedWidgetAttributeValue, PredefinedWidgetAttributeValueModel>()
-            .ReverseMap();
-
-        CreateMap<WidgetAttribute, WidgetAttributeModel>()
-            .ReverseMap();
     }
 
     /// <summary>
@@ -569,116 +527,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(settings => settings.VideoIframeHeight, options => options.Ignore())
             .ForMember(settings => settings.VideoIframeWidth, options => options.Ignore());
     }
-
-    /// <summary>
-    /// Create messages maps 
-    /// </summary>
-    protected virtual void CreateMessagesMaps()
-    {
-        //CreateMap<Campaign, CampaignModel>()
-        //    .ForMember(model => model.AllowedTokens, options => options.Ignore())
-        //    .ForMember(model => model.AvailableCustomerRoles, options => options.Ignore())
-        //    .ForMember(model => model.AvailableEmailAccounts, options => options.Ignore())
-        //    .ForMember(model => model.AvailableSites, options => options.Ignore())
-        //    .ForMember(model => model.CreatedOn, options => options.Ignore())
-        //    .ForMember(model => model.DontSendBeforeDate, options => options.Ignore())
-        //    .ForMember(model => model.EmailAccountId, options => options.Ignore())
-        //    .ForMember(model => model.TestEmail, options => options.Ignore());
-        //CreateMap<CampaignModel, Campaign>()
-        //    .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
-        //    .ForMember(entity => entity.DontSendBeforeDateUtc, options => options.Ignore());
-
-        CreateMap<EmailAccount, EmailAccountModel>()
-            .ForMember(model => model.IsDefaultEmailAccount, options => options.Ignore())
-            .ForMember(model => model.SendTestEmailTo, options => options.Ignore())
-            .ForMember(model => model.AvailableEmailAuthenticationMethods, options => options.Ignore())
-            .ForMember(model => model.AuthUrl, options => options.Ignore());
-        CreateMap<EmailAccountModel, EmailAccount>()
-            .ForMember(entity => entity.Password, options => options.Ignore())
-            .ForMember(entity => entity.ClientSecret, options => options.Ignore())
-            .ForMember(entity => entity.EmailAuthenticationMethodId, options => options.Ignore());
-
-        CreateMap<MessageTemplate, MessageTemplateModel>()
-            .ForMember(model => model.AllowedTokens, options => options.Ignore())
-            .ForMember(model => model.AvailableEmailAccounts, options => options.Ignore())
-            .ForMember(model => model.HasAttachedDownload, options => options.Ignore())
-            .ForMember(model => model.ListOfSites, options => options.Ignore())
-            .ForMember(model => model.SendImmediately, options => options.Ignore());
-        CreateMap<MessageTemplateModel, MessageTemplate>()
-            .ForMember(entity => entity.DelayPeriod, options => options.Ignore());
-
-        //CreateMap<NewsLetterSubscription, NewsletterSubscriptionModel>()
-        //    .ForMember(model => model.CreatedOn, options => options.Ignore())
-        //    .ForMember(model => model.LanguageName, options => options.Ignore())
-        //    .ForMember(model => model.SiteName, options => options.Ignore());
-        //CreateMap<NewsletterSubscriptionModel, NewsLetterSubscription>()
-        //    .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
-        //    .ForMember(entity => entity.NewsLetterSubscriptionGuid, options => options.Ignore())
-        //    .ForMember(entity => entity.LanguageId, option => option.Ignore())
-        //    .ForMember(entity => entity.SiteId, options => options.Ignore());
-
-        CreateMap<QueuedEmail, QueuedEmailModel>()
-            .ForMember(model => model.CreatedOn, options => options.Ignore())
-            .ForMember(model => model.DontSendBeforeDate, options => options.Ignore())
-            .ForMember(model => model.EmailAccountName, options => options.Ignore())
-            .ForMember(model => model.PriorityName, options => options.Ignore())
-            .ForMember(model => model.SendImmediately, options => options.Ignore())
-            .ForMember(model => model.SentOn, options => options.Ignore());
-        CreateMap<QueuedEmailModel, QueuedEmail>()
-            .ForMember(entity => entity.AttachmentFileName, options => options.Ignore())
-            .ForMember(entity => entity.AttachmentFilePath, options => options.Ignore())
-            .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
-            .ForMember(entity => entity.DontSendBeforeDateUtc, options => options.Ignore())
-            .ForMember(entity => entity.EmailAccountId, options => options.Ignore())
-            .ForMember(entity => entity.Priority, options => options.Ignore())
-            .ForMember(entity => entity.PriorityId, options => options.Ignore())
-            .ForMember(entity => entity.SentOnUtc, options => options.Ignore());
-    }
-
-    /// <summary>
-    /// Create news maps 
-    /// </summary>
-    //protected virtual void CreateNewsMaps()
-    //{
-    //    CreateMap<NewsComment, NewsCommentModel>()
-    //        .ForMember(model => model.CustomerInfo, options => options.Ignore())
-    //        .ForMember(model => model.CreatedOn, options => options.Ignore())
-    //        .ForMember(model => model.CommentText, options => options.Ignore())
-    //        .ForMember(model => model.NewsItemTitle, options => options.Ignore())
-    //        .ForMember(model => model.SiteName, options => options.Ignore());
-    //    CreateMap<NewsCommentModel, NewsComment>()
-    //        .ForMember(entity => entity.CommentTitle, options => options.Ignore())
-    //        .ForMember(entity => entity.CommentText, options => options.Ignore())
-    //        .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
-    //        .ForMember(entity => entity.NewsItemId, options => options.Ignore())
-    //        .ForMember(entity => entity.CustomerId, options => options.Ignore())
-    //        .ForMember(entity => entity.SiteId, options => options.Ignore());
-
-    //    CreateMap<NewsItem, NewsItemModel>()
-    //        .ForMember(model => model.ApprovedComments, options => options.Ignore())
-    //        .ForMember(model => model.AvailableLanguages, options => options.Ignore())
-    //        .ForMember(model => model.CreatedOn, options => options.Ignore())
-    //        .ForMember(model => model.LanguageName, options => options.Ignore())
-    //        .ForMember(model => model.NotApprovedComments, options => options.Ignore())
-    //        .ForMember(model => model.SeName, options => options.Ignore());
-    //    CreateMap<NewsItemModel, NewsItem>()
-    //        .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore());
-
-    //    CreateMap<NewsSettings, NewsSettingsModel>()
-    //        .ForMember(model => model.AllowNotRegisteredUsersToLeaveComments_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.Enabled_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.MainPageNewsCount_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.NewsArchivePageSize_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.NewsCommentsMustBeApproved_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.NotifyAboutNewNewsComments_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.ShowHeaderRssUrl_OverrideForSite, options => options.Ignore())
-    //        .ForMember(model => model.ShowNewsOnMainPage_OverrideForSite, options => options.Ignore());
-    //    CreateMap<NewsSettingsModel, NewsSettings>();
-    //}
-
-    /// <summary>
-    /// Create plugins maps 
-    /// </summary>
     protected virtual void CreatePluginsMaps()
     {
         CreateMap<PluginDescriptor, PluginModel>()
@@ -767,18 +615,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(entity => entity.LastEndUtc, options => options.Ignore())
             .ForMember(entity => entity.LastSuccessUtc, options => options.Ignore())
             .ForMember(entity => entity.LastEnabledUtc, options => options.Ignore());
-    }
-    protected virtual void CreateTopicsMaps()
-    {
-        CreateMap<Topic, TopicModel>()
-            .ForMember(model => model.AvailableTopicTemplates, options => options.Ignore())
-            .ForMember(model => model.SeName, options => options.Ignore())
-            .ForMember(model => model.TopicName, options => options.Ignore())
-            .ForMember(model => model.Url, options => options.Ignore());
-        CreateMap<TopicModel, Topic>();
-
-        CreateMap<TopicTemplate, TopicTemplateModel>();
-        CreateMap<TopicTemplateModel, TopicTemplate>();
     }
 
     /// <summary>

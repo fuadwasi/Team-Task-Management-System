@@ -1,7 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Mvc.Controllers
-@using AssetForge.Services.Authentication.External
+
 @using AssetForge.Services.Authentication.MultiFactor
-@using AssetForge.Services.Cms
 @using AssetForge.Services.Plugins
 @inject IPluginService pluginService
 @inject IWebHelper webHelper
@@ -17,16 +16,7 @@
     var listActionMethodName = string.Empty;
     var listControllerName = string.Empty;
 
-     if (plugin is IExternalAuthenticationMethod)
-    {
-        //external auth method
-        activeMenuSystemName = "External authentication methods";
-        configureLocale = "Admin.Configuration.Authentication.ExternalMethods.Configure";
-        backToLocale = "Admin.Configuration.Authentication.ExternalMethods.BackToList";
-        listActionMethodName = "ExternalMethods";
-        listControllerName = "Authentication";
-    }
-    else if (plugin is IMultiFactorAuthenticationMethod)
+     if (plugin is IMultiFactorAuthenticationMethod)
     {
         //multi-factor authentication method
         activeMenuSystemName = "Multi-factor authentication methods";
@@ -35,15 +25,6 @@
         listActionMethodName = "MultiFactorMethods";
         listControllerName = "Authentication";
 
-    }
-    else if (plugin is IWidgetPlugin widget && !widget.HideInWidgetList)
-    {
-        //widgets
-        activeMenuSystemName = "Widgets";
-        configureLocale = "Admin.ContentManagement.Widgets.Configure";
-        backToLocale = "Admin.ContentManagement.Widgets.BackToList";
-        listActionMethodName = "List";
-        listControllerName = "Widget";
     }
     else if (plugin is IMiscPlugin)
     {

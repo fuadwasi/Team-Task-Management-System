@@ -28,7 +28,6 @@ public partial record CustomerModel : BaseEntityModel, IAclSupportedModel
         AvailableNewsletterSubscriptionSites = new List<SelectListItem>();
         SelectedNewsletterSubscriptionSiteIds = new List<int>();
         CustomerActivityLogSearchModel = new CustomerActivityLogSearchModel();
-        CustomerAssociatedExternalAuthRecordsSearchModel = new CustomerAssociatedExternalAuthRecordsSearchModel();
     }
 
     #endregion
@@ -207,7 +206,7 @@ public partial record CustomerModel : BaseEntityModel, IAclSupportedModel
 
     public CustomerActivityLogSearchModel CustomerActivityLogSearchModel { get; set; }
 
-    public CustomerAssociatedExternalAuthRecordsSearchModel CustomerAssociatedExternalAuthRecordsSearchModel { get; set; }
+    //public CustomerAssociatedExternalAuthRecordsSearchModel CustomerAssociatedExternalAuthRecordsSearchModel { get; set; }
 
     #endregion
 

@@ -1,7 +1,7 @@
 ﻿using AssetForge.Core;
 using AssetForge.Core.Domain.Catalog;
 using AssetForge.Core.Domain.Seo;
-using AssetForge.Core.Domain.Topics;
+
 using AssetForge.Core.Domain.Vendors;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Topics;

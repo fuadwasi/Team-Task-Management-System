@@ -2,7 +2,7 @@
 using AssetForge.Core.Domain.Catalog;
 using AssetForge.Core.Domain.Localization;
 using AssetForge.Core.Domain.Seo;
-using AssetForge.Core.Domain.Topics;
+
 using AssetForge.Core.Domain.Vendors;
 using AssetForge.Core.Events;
 using AssetForge.Core.Http;

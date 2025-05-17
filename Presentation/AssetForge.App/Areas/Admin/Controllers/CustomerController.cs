@@ -5,7 +5,7 @@ using AssetForge.Core;
 using AssetForge.Core.Domain.Attributes;
 using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
-using AssetForge.Core.Domain.Messages;
+
 using AssetForge.Core.Events;
 using AssetForge.Services.Attributes;
 using AssetForge.Services.Common;
@@ -14,7 +14,6 @@ using AssetForge.Services.ExportImport;
 using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Security;
 using AssetForge.Services.Sites;
 using AssetForge.Web.Framework.Controllers;
@@ -32,7 +31,6 @@ public partial class CustomerController : BaseAdminController
 
     protected readonly CustomerSettings _customerSettings;
     protected readonly DateTimeSettings _dateTimeSettings;
-    protected readonly EmailAccountSettings _emailAccountSettings;
     protected readonly IAddressService _addressService;
     protected readonly IAttributeParser<AddressAttribute, AddressAttributeValue> _addressAttributeParser;
     protected readonly IAttributeParser<CustomerAttribute, CustomerAttributeValue> _customerAttributeParser;
@@ -42,20 +40,15 @@ public partial class CustomerController : BaseAdminController
     protected readonly ICustomerRegistrationService _customerRegistrationService;
     protected readonly ICustomerService _customerService;
     protected readonly IDateTimeHelper _dateTimeHelper;
-    protected readonly IEmailAccountService _emailAccountService;
     protected readonly IEventPublisher _eventPublisher;
     protected readonly IExportManager _exportManager;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IImportManager _importManager;
     protected readonly ILocalizationService _localizationService;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
-    protected readonly INotificationService _notificationService;
     protected readonly IPermissionService _permissionService;
-    protected readonly IQueuedEmailService _queuedEmailService;
     protected readonly ISiteContext _siteContext;
     protected readonly ISiteService _siteService;
     protected readonly IWorkContext _workContext;
-    protected readonly IWorkflowMessageService _workflowMessageService;
     private static readonly char[] _separator = [','];
 
     #endregion
@@ -64,7 +57,6 @@ public partial class CustomerController : BaseAdminController
 
     public CustomerController(CustomerSettings customerSettings,
         DateTimeSettings dateTimeSettings,
-        EmailAccountSettings emailAccountSettings,
         IAddressService addressService,
         IAttributeParser<AddressAttribute, AddressAttributeValue> addressAttributeParser,
         IAttributeParser<CustomerAttribute, CustomerAttributeValue> customerAttributeParser,
@@ -74,24 +66,18 @@ public partial class CustomerController : BaseAdminController
         ICustomerRegistrationService customerRegistrationService,
         ICustomerService customerService,
         IDateTimeHelper dateTimeHelper,
-        IEmailAccountService emailAccountService,
         IEventPublisher eventPublisher,
         IExportManager exportManager,
         IGenericAttributeService genericAttributeService,
         IImportManager importManager,
         ILocalizationService localizationService,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
-        INotificationService notificationService,
         IPermissionService permissionService,
-        IQueuedEmailService queuedEmailService,
         ISiteContext siteContext,
         ISiteService siteService,
-        IWorkContext workContext,
-        IWorkflowMessageService workflowMessageService)
+        IWorkContext workContext)
     {
         _customerSettings = customerSettings;
         _dateTimeSettings = dateTimeSettings;
-        _emailAccountSettings = emailAccountSettings;
         _addressService = addressService;
         _addressAttributeParser = addressAttributeParser;
         _customerAttributeParser = customerAttributeParser;
@@ -101,20 +87,15 @@ public partial class CustomerController : BaseAdminController
         _customerRegistrationService = customerRegistrationService;
         _customerService = customerService;
         _dateTimeHelper = dateTimeHelper;
-        _emailAccountService = emailAccountService;
         _eventPublisher = eventPublisher;
         _exportManager = exportManager;
         _genericAttributeService = genericAttributeService;
         _importManager = importManager;
         _localizationService = localizationService;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
-        _notificationService = notificationService;
         _permissionService = permissionService;
-        _queuedEmailService = queuedEmailService;
         _siteContext = siteContext;
         _siteService = siteService;
         _workContext = workContext;
-        _workflowMessageService = workflowMessageService;
     }
 
     #endregion
@@ -302,7 +283,6 @@ public partial class CustomerController : BaseAdminController
         if (!string.IsNullOrEmpty(customerRolesError))
         {
             ModelState.AddModelError(string.Empty, customerRolesError);
-            _notificationService.ErrorNotification(customerRolesError);
         }
 
         // Ensure that valid email address is entered if Registered role is checked to avoid registered customers with empty email address
@@ -310,8 +290,6 @@ public partial class CustomerController : BaseAdminController
             !CommonHelper.IsValidEmail(model.Email))
         {
             ModelState.AddModelError(string.Empty, await _localizationService.GetResourceAsync("Admin.Customers.Customers.ValidEmailRequiredRegisteredRole"));
-
-            _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.ValidEmailRequiredRegisteredRole"));
         }
 
         //custom customer attributes
@@ -371,41 +349,6 @@ public partial class CustomerController : BaseAdminController
 
             await _customerService.InsertCustomerAsync(customer);
 
-            //newsletter subscriptions
-            if (!string.IsNullOrEmpty(customer.Email))
-            {
-                var allSites = await _siteService.GetAllSitesAsync();
-                foreach (var site in allSites)
-                {
-                    var newsletterSubscription = await _newsLetterSubscriptionService
-                        .GetNewsLetterSubscriptionByEmailAndSiteIdAsync(customer.Email, site.Id);
-                    if (model.SelectedNewsletterSubscriptionSiteIds != null &&
-                        model.SelectedNewsletterSubscriptionSiteIds.Contains(site.Id))
-                    {
-                        //subscribed
-                        if (newsletterSubscription == null)
-                        {
-                            await _newsLetterSubscriptionService.InsertNewsLetterSubscriptionAsync(new NewsLetterSubscription
-                            {
-                                NewsLetterSubscriptionGuid = Guid.NewGuid(),
-                                Email = customer.Email,
-                                Active = true,
-                                SiteId = site.Id,
-                                LanguageId = customer.LanguageId ?? site.DefaultLanguageId,
-                                CreatedOnUtc = DateTime.UtcNow
-                            });
-                        }
-                    }
-                    else
-                    {
-                        //not subscribed
-                        if (newsletterSubscription != null)
-                        {
-                            await _newsLetterSubscriptionService.DeleteNewsLetterSubscriptionAsync(newsletterSubscription);
-                        }
-                    }
-                }
-            }
 
             //password
             if (!string.IsNullOrWhiteSpace(model.Password))
@@ -414,8 +357,6 @@ public partial class CustomerController : BaseAdminController
                 var changePassResult = await _customerRegistrationService.ChangePasswordAsync(changePassRequest);
                 if (!changePassResult.Success)
                 {
-                    foreach (var changePassError in changePassResult.Errors)
-                        _notificationService.ErrorNotification(changePassError);
                 }
             }
 
@@ -434,7 +375,7 @@ public partial class CustomerController : BaseAdminController
             //activity log
             await _customerActivityService.InsertActivityAsync("AddNewCustomer",
                 string.Format(await _localizationService.GetResourceAsync("ActivityLog.AddNewCustomer"), customer.Id), customer);
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Added"));
+            // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Added"));
 
             if (!continueEditing)
                 return RedirectToAction("List");
@@ -489,7 +430,7 @@ public partial class CustomerController : BaseAdminController
         if (!string.IsNullOrEmpty(customerRolesError))
         {
             ModelState.AddModelError(string.Empty, customerRolesError);
-            _notificationService.ErrorNotification(customerRolesError);
+            // _notificationService.ErrorNotification(customerRolesError);
         }
 
         // Ensure that valid email address is entered if Registered role is checked to avoid registered customers with empty email address
@@ -497,7 +438,7 @@ public partial class CustomerController : BaseAdminController
             !CommonHelper.IsValidEmail(model.Email))
         {
             ModelState.AddModelError(string.Empty, await _localizationService.GetResourceAsync("Admin.Customers.Customers.ValidEmailRequiredRegisteredRole"));
-            _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.ValidEmailRequiredRegisteredRole"));
+            // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.ValidEmailRequiredRegisteredRole"));
         }
 
         //custom customer attributes
@@ -521,7 +462,7 @@ public partial class CustomerController : BaseAdminController
                 if (!await _customerService.IsAdminAsync(customer) || model.Active || await SecondAdminAccountExistsAsync(customer))
                     customer.Active = model.Active;
                 else
-                    _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.Deactivate"));
+                    // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.Deactivate"));
 
                 //email
                 if (!string.IsNullOrWhiteSpace(model.Email))
@@ -573,41 +514,6 @@ public partial class CustomerController : BaseAdminController
                 //custom customer attributes
                 customer.CustomCustomerAttributesXML = customerAttributesXml;
 
-                //newsletter subscriptions
-                if (!string.IsNullOrEmpty(customer.Email))
-                {
-                    var allSites = await _siteService.GetAllSitesAsync();
-                    foreach (var site in allSites)
-                    {
-                        var newsletterSubscription = await _newsLetterSubscriptionService
-                            .GetNewsLetterSubscriptionByEmailAndSiteIdAsync(customer.Email, site.Id);
-                        if (model.SelectedNewsletterSubscriptionSiteIds != null &&
-                            model.SelectedNewsletterSubscriptionSiteIds.Contains(site.Id))
-                        {
-                            //subscribed
-                            if (newsletterSubscription == null)
-                            {
-                                await _newsLetterSubscriptionService.InsertNewsLetterSubscriptionAsync(new NewsLetterSubscription
-                                {
-                                    NewsLetterSubscriptionGuid = Guid.NewGuid(),
-                                    Email = customer.Email,
-                                    Active = true,
-                                    SiteId = site.Id,
-                                    LanguageId = customer.LanguageId ?? site.DefaultLanguageId,
-                                    CreatedOnUtc = DateTime.UtcNow
-                                });
-                            }
-                        }
-                        else
-                        {
-                            //not subscribed
-                            if (newsletterSubscription != null)
-                            {
-                                await _newsLetterSubscriptionService.DeleteNewsLetterSubscriptionAsync(newsletterSubscription);
-                            }
-                        }
-                    }
-                }
 
                 var currentCustomerRoleIds = await _customerService.GetCustomerRoleIdsAsync(customer, true);
 
@@ -631,7 +537,7 @@ public partial class CustomerController : BaseAdminController
                         //prevent attempts to delete the administrator role from the user, if the user is the last active administrator
                         if (customerRole.SystemName == CustomerDefaults.AdministratorsRoleName && !await SecondAdminAccountExistsAsync(customer))
                         {
-                            _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.DeleteRole"));
+                            // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.DeleteRole"));
                             continue;
                         }
 
@@ -647,7 +553,7 @@ public partial class CustomerController : BaseAdminController
                 await _customerActivityService.InsertActivityAsync("EditCustomer",
                     string.Format(await _localizationService.GetResourceAsync("ActivityLog.EditCustomer"), customer.Id), customer);
 
-                _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Updated"));
+                // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Updated"));
 
                 if (!continueEditing)
                     return RedirectToAction("List");
@@ -656,7 +562,7 @@ public partial class CustomerController : BaseAdminController
             }
             catch (Exception exc)
             {
-                _notificationService.ErrorNotification(exc.Message);
+                // _notificationService.ErrorNotification(exc.Message);
             }
         }
 
@@ -682,18 +588,14 @@ public partial class CustomerController : BaseAdminController
         //ensure that the current customer cannot change passwords of "Administrators" if he's not an admin himself
         if (await _customerService.IsAdminAsync(customer) && !await _customerService.IsAdminAsync(await _workContext.GetCurrentCustomerAsync()))
         {
-            _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.OnlyAdminCanChangePassword"));
+            // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.OnlyAdminCanChangePassword"));
             return RedirectToAction("Edit", new { id = customer.Id });
         }
 
         var changePassRequest = new ChangePasswordRequest(customer.Email,
             false, _customerSettings.DefaultPasswordFormat, model.Password);
         var changePassResult = await _customerRegistrationService.ChangePasswordAsync(changePassRequest);
-        if (changePassResult.Success)
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.PasswordChanged"));
-        else
-            foreach (var error in changePassResult.Errors)
-                _notificationService.ErrorNotification(error);
+
 
         return RedirectToAction("Edit", new { id = customer.Id });
     }
@@ -714,7 +616,7 @@ public partial class CustomerController : BaseAdminController
         //raise event       
         await _eventPublisher.PublishAsync(new CustomerChangeMultiFactorAuthenticationProviderEvent(customer));
 
-        _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.UnbindMFAProvider"));
+        // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.UnbindMFAProvider"));
 
         return RedirectToAction("Edit", new { id = customer.Id });
     }
@@ -735,39 +637,32 @@ public partial class CustomerController : BaseAdminController
             //prevent attempts to delete the user, if it is the last active administrator
             if (await _customerService.IsAdminAsync(customer) && !await SecondAdminAccountExistsAsync(customer))
             {
-                _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.DeleteAdministrator"));
+                // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.AdminAccountShouldExists.DeleteAdministrator"));
                 return RedirectToAction("Edit", new { id = customer.Id });
             }
 
             //ensure that the current customer cannot delete "Administrators" if he's not an admin himself
             if (await _customerService.IsAdminAsync(customer) && !await _customerService.IsAdminAsync(await _workContext.GetCurrentCustomerAsync()))
             {
-                _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.OnlyAdminCanDeleteAdmin"));
+                // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.OnlyAdminCanDeleteAdmin"));
                 return RedirectToAction("Edit", new { id = customer.Id });
             }
 
             //delete
             await _customerService.DeleteCustomerAsync(customer);
 
-            //remove newsletter subscription (if exists)
-            foreach (var site in await _siteService.GetAllSitesAsync())
-            {
-                var subscription = await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndSiteIdAsync(customer.Email, site.Id);
-                if (subscription != null)
-                    await _newsLetterSubscriptionService.DeleteNewsLetterSubscriptionAsync(subscription);
-            }
 
             //activity log
             await _customerActivityService.InsertActivityAsync("DeleteCustomer",
                 string.Format(await _localizationService.GetResourceAsync("ActivityLog.DeleteCustomer"), customer.Id), customer);
 
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Deleted"));
+            // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Deleted"));
 
             return RedirectToAction("List");
         }
         catch (Exception exc)
         {
-            _notificationService.ErrorNotification(exc.Message);
+            // _notificationService.ErrorNotification(exc.Message);
             return RedirectToAction("Edit", new { id = customer.Id });
         }
     }
@@ -786,8 +681,6 @@ public partial class CustomerController : BaseAdminController
 
         if (!customer.Active)
         {
-            _notificationService.WarningNotification(
-                await _localizationService.GetResourceAsync("Admin.Customers.Customers.Impersonate.Inactive"));
             return RedirectToAction("Edit", customer.Id);
         }
 
@@ -796,7 +689,7 @@ public partial class CustomerController : BaseAdminController
         var currentCustomer = await _workContext.GetCurrentCustomerAsync();
         if (!await _customerService.IsAdminAsync(currentCustomer) && await _customerService.IsAdminAsync(customer))
         {
-            _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.NonAdminNotImpersonateAsAdminError"));
+            // _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.NonAdminNotImpersonateAsAdminError"));
             return RedirectToAction("Edit", customer.Id);
         }
 
@@ -826,9 +719,7 @@ public partial class CustomerController : BaseAdminController
         if (customer == null)
             return RedirectToAction("List");
 
-        await _workflowMessageService.SendCustomerWelcomeMessageAsync(customer, (await _workContext.GetWorkingLanguageAsync()).Id);
-
-        _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.SendWelcomeMessage.Success"));
+        // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.SendWelcomeMessage.Success"));
 
         return RedirectToAction("Edit", new { id = customer.Id });
     }
@@ -847,110 +738,12 @@ public partial class CustomerController : BaseAdminController
 
         //email validation message
         await _genericAttributeService.SaveAttributeAsync(customer, CustomerDefaults.AccountActivationTokenAttribute, Guid.NewGuid().ToString());
-        await _workflowMessageService.SendCustomerEmailValidationMessageAsync(customer, (await _workContext.GetWorkingLanguageAsync()).Id);
+        // await _workflowMessageService.SendCustomerEmailValidationMessageAsync(customer, (await _workContext.GetWorkingLanguageAsync()).Id);
 
-        _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.ReSendActivationMessage.Success"));
-
-        return RedirectToAction("Edit", new { id = customer.Id });
-    }
-
-    public virtual async Task<IActionResult> SendEmail(CustomerModel model)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        //try to get a customer with the specified id
-        var customer = await _customerService.GetCustomerByIdAsync(model.Id);
-        if (customer == null)
-            return RedirectToAction("List");
-
-        try
-        {
-            if (string.IsNullOrWhiteSpace(customer.Email))
-                throw new AssetForgeException("Customer email is empty");
-            if (!CommonHelper.IsValidEmail(customer.Email))
-                throw new AssetForgeException("Customer email is not valid");
-            if (string.IsNullOrWhiteSpace(model.SendEmail.Subject))
-                throw new AssetForgeException("Email subject is empty");
-            if (string.IsNullOrWhiteSpace(model.SendEmail.Body))
-                throw new AssetForgeException("Email body is empty");
-
-            var emailAccount = (await _emailAccountService.GetEmailAccountByIdAsync(_emailAccountSettings.DefaultEmailAccountId)
-                ?? (await _emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault())
-                ?? throw new AssetForgeException("Email account can't be loaded");
-            var email = new QueuedEmail
-            {
-                Priority = QueuedEmailPriority.High,
-                EmailAccountId = emailAccount.Id,
-                FromName = emailAccount.DisplayName,
-                From = emailAccount.Email,
-                ToName = await _customerService.GetCustomerFullNameAsync(customer),
-                To = customer.Email,
-                Subject = model.SendEmail.Subject,
-                Body = model.SendEmail.Body,
-                CreatedOnUtc = DateTime.UtcNow,
-                DontSendBeforeDateUtc = model.SendEmail.SendImmediately || !model.SendEmail.DontSendBeforeDate.HasValue ?
-                    null : (DateTime?)_dateTimeHelper.ConvertToUtcTime(model.SendEmail.DontSendBeforeDate.Value)
-            };
-            await _queuedEmailService.InsertQueuedEmailAsync(email);
-
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.SendEmail.Queued"));
-        }
-        catch (Exception exc)
-        {
-            _notificationService.ErrorNotification(exc.Message);
-        }
+        // _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.ReSendActivationMessage.Success"));
 
         return RedirectToAction("Edit", new { id = customer.Id });
     }
-
-    //public virtual async Task<IActionResult> SendPm(CustomerModel model)
-    //{
-    //    if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-    //        return AccessDeniedView();
-
-    //    //try to get a customer with the specified id
-    //    var customer = await _customerService.GetCustomerByIdAsync(model.Id);
-    //    if (customer == null)
-    //        return RedirectToAction("List");
-
-    //    try
-    //    {
-    //        if (!_forumSettings.AllowPrivateMessages)
-    //            throw new AssetForgeException("Private messages are disabled");
-    //        if (await _customerService.IsGuestAsync(customer))
-    //            throw new AssetForgeException("Customer should be registered");
-    //        if (string.IsNullOrWhiteSpace(model.SendPm.Subject))
-    //            throw new AssetForgeException(await _localizationService.GetResourceAsync("PrivateMessages.SubjectCannotBeEmpty"));
-    //        if (string.IsNullOrWhiteSpace(model.SendPm.Message))
-    //            throw new AssetForgeException(await _localizationService.GetResourceAsync("PrivateMessages.MessageCannotBeEmpty"));
-
-    //        var site = await _siteContext.GetCurrentSiteAsync();
-
-    //        var privateMessage = new PrivateMessage
-    //        {
-    //            SiteId = site.Id,
-    //            ToCustomerId = customer.Id,
-    //            FromCustomerId = customer.Id,
-    //            Subject = model.SendPm.Subject,
-    //            Text = model.SendPm.Message,
-    //            IsDeletedByAuthor = false,
-    //            IsDeletedByRecipient = false,
-    //            IsRead = false,
-    //            CreatedOnUtc = DateTime.UtcNow
-    //        };
-
-    //        await _forumService.InsertPrivateMessageAsync(privateMessage);
-
-    //        _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.SendPM.Sent"));
-    //    }
-    //    catch (Exception exc)
-    //    {
-    //        _notificationService.ErrorNotification(exc.Message);
-    //    }
-
-    //    return RedirectToAction("Edit", new { id = customer.Id });
-    //}
 
     #endregion
 
@@ -1058,155 +851,6 @@ public partial class CustomerController : BaseAdminController
         var model = await _customerModelFactory.PrepareCustomerActivityLogListModelAsync(searchModel, customer);
 
         return Json(model);
-    }
-
-    #endregion
-
-    #region Export / Import
-
-    [HttpPost, ActionName("ExportExcel")]
-    [FormValueRequired("exportexcel-all")]
-    public virtual async Task<IActionResult> ExportExcelAll(CustomerSearchModel model)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        var customers = await _customerService.GetAllCustomersAsync(customerRoleIds: model.SelectedCustomerRoleIds.ToArray(),
-            email: model.SearchEmail,
-            username: model.SearchUsername,
-            firstName: model.SearchFirstName,
-            lastName: model.SearchLastName,
-            dayOfBirth: int.TryParse(model.SearchDayOfBirth, out var dayOfBirth) ? dayOfBirth : 0,
-            monthOfBirth: int.TryParse(model.SearchMonthOfBirth, out var monthOfBirth) ? monthOfBirth : 0,
-            company: model.SearchCompany,
-            phone: model.SearchPhone,
-            zipPostalCode: model.SearchZipPostalCode);
-
-        try
-        {
-            var bytes = await _exportManager.ExportCustomersToXlsxAsync(customers);
-            return File(bytes, MimeTypes.TextXlsx, "customers.xlsx");
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-            return RedirectToAction("List");
-        }
-    }
-
-    [HttpPost]
-    public virtual async Task<IActionResult> ExportExcelSelected(string selectedIds)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        var customers = new List<Customer>();
-        if (selectedIds != null)
-        {
-            var ids = selectedIds
-                .Split(_separator, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => Convert.ToInt32(x))
-                .ToArray();
-            customers.AddRange(await _customerService.GetCustomersByIdsAsync(ids));
-        }
-
-        try
-        {
-            var bytes = await _exportManager.ExportCustomersToXlsxAsync(customers);
-            return File(bytes, MimeTypes.TextXlsx, "customers.xlsx");
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-            return RedirectToAction("List");
-        }
-    }
-
-    [HttpPost, ActionName("ExportXML")]
-    [FormValueRequired("exportxml-all")]
-    public virtual async Task<IActionResult> ExportXmlAll(CustomerSearchModel model)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        var customers = await _customerService.GetAllCustomersAsync(customerRoleIds: model.SelectedCustomerRoleIds.ToArray(),
-            email: model.SearchEmail,
-            username: model.SearchUsername,
-            firstName: model.SearchFirstName,
-            lastName: model.SearchLastName,
-            dayOfBirth: int.TryParse(model.SearchDayOfBirth, out var dayOfBirth) ? dayOfBirth : 0,
-            monthOfBirth: int.TryParse(model.SearchMonthOfBirth, out var monthOfBirth) ? monthOfBirth : 0,
-            company: model.SearchCompany,
-            phone: model.SearchPhone,
-            zipPostalCode: model.SearchZipPostalCode);
-
-        try
-        {
-            var xml = await _exportManager.ExportCustomersToXmlAsync(customers);
-            return File(Encoding.UTF8.GetBytes(xml), "application/xml", "customers.xml");
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-            return RedirectToAction("List");
-        }
-    }
-
-    [HttpPost]
-    public virtual async Task<IActionResult> ExportXmlSelected(string selectedIds)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        var customers = new List<Customer>();
-        if (selectedIds != null)
-        {
-            var ids = selectedIds
-                .Split(_separator, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => Convert.ToInt32(x))
-                .ToArray();
-            customers.AddRange(await _customerService.GetCustomersByIdsAsync(ids));
-        }
-
-        try
-        {
-            var xml = await _exportManager.ExportCustomersToXmlAsync(customers);
-            return File(Encoding.UTF8.GetBytes(xml), "application/xml", "customers.xml");
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-            return RedirectToAction("List");
-        }
-    }
-
-    [HttpPost]
-    public virtual async Task<IActionResult> ImportExcel(IFormFile importexcelfile)
-    {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers))
-            return AccessDeniedView();
-
-        try
-        {
-            if ((importexcelfile?.Length ?? 0) > 0)
-                await _importManager.ImportCustomersFromXlsxAsync(importexcelfile.OpenReadStream());
-            else
-            {
-                _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Common.UploadFile"));
-
-                return RedirectToAction("List");
-            }
-
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Customers.Customers.Imported"));
-
-            return RedirectToAction("List");
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-
-            return RedirectToAction("List");
-        }
     }
 
     #endregion

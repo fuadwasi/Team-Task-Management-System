@@ -26,7 +26,6 @@ public partial class BaseAdminModelFactory : IBaseAdminModelFactory
     protected readonly ICustomerActivityService _customerActivityService;
     protected readonly ICustomerService _customerService;
     protected readonly IDateTimeHelper _dateTimeHelper;
-    protected readonly IEmailAccountService _emailAccountService;
     protected readonly ILanguageService _languageService;
     protected readonly ILocalizationService _localizationService;
     protected readonly IPluginService _pluginService;
@@ -44,7 +43,6 @@ public partial class BaseAdminModelFactory : IBaseAdminModelFactory
         ICustomerActivityService customerActivityService,
         ICustomerService customerService,
         IDateTimeHelper dateTimeHelper,
-        IEmailAccountService emailAccountService,
         ILanguageService languageService,
         ILocalizationService localizationService,
         IPluginService pluginService,
@@ -58,7 +56,6 @@ public partial class BaseAdminModelFactory : IBaseAdminModelFactory
         _customerActivityService = customerActivityService;
         _customerService = customerService;
         _dateTimeHelper = dateTimeHelper;
-        _emailAccountService = emailAccountService;
         _languageService = languageService;
         _localizationService = localizationService;
         _pluginService = pluginService;
@@ -236,28 +233,6 @@ public partial class BaseAdminModelFactory : IBaseAdminModelFactory
         foreach (var customerRole in availableCustomerRoles)
         {
             items.Add(new SelectListItem { Value = customerRole.Id.ToString(), Text = customerRole.Name });
-        }
-
-        //insert special item for the default value
-        await PrepareDefaultItemAsync(items, withSpecialDefaultItem, defaultItemText);
-    }
-
-    /// <summary>
-    /// Prepare available email accounts
-    /// </summary>
-    /// <param name="items">Email account items</param>
-    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
-    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task PrepareEmailAccountsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null)
-    {
-        ArgumentNullException.ThrowIfNull(items);
-
-        //prepare available email accounts
-        var availableEmailAccounts = await _emailAccountService.GetAllEmailAccountsAsync();
-        foreach (var emailAccount in availableEmailAccounts)
-        {
-            items.Add(new SelectListItem { Value = emailAccount.Id.ToString(), Text = $"{emailAccount.DisplayName} ({emailAccount.Email})" });
         }
 
         //insert special item for the default value

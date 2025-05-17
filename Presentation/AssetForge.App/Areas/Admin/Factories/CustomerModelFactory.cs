@@ -6,7 +6,7 @@ using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Media;
 using AssetForge.Services.Attributes;
-using AssetForge.Services.Authentication.External;
+
 using AssetForge.Services.Common;
 using AssetForge.Services.Customers;
 using AssetForge.Services.Directory;
@@ -14,7 +14,6 @@ using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Logging;
 using AssetForge.Services.Media;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Sites;
 using AssetForge.Web.Framework.Factories;
 using AssetForge.Web.Framework.Models.Extensions;
@@ -37,24 +36,20 @@ public partial class CustomerModelFactory : ICustomerModelFactory
     protected readonly IAttributeFormatter<AddressAttribute, AddressAttributeValue> _addressAttributeFormatter;
     protected readonly IAttributeParser<CustomerAttribute, CustomerAttributeValue> _customerAttributeParser;
     protected readonly IAttributeService<CustomerAttribute, CustomerAttributeValue> _customerAttributeService;
-    protected readonly IAuthenticationPluginManager _authenticationPluginManager;
     protected readonly IBaseAdminModelFactory _baseAdminModelFactory;
     protected readonly ICountryService _countryService;
     protected readonly ICustomerActivityService _customerActivityService;
     protected readonly ICustomerService _customerService;
     protected readonly IDateTimeHelper _dateTimeHelper;
-    protected readonly IExternalAuthenticationService _externalAuthenticationService;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IGeoLookupService _geoLookupService;
     protected readonly ILocalizationService _localizationService;
-    protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
     protected readonly IPictureService _pictureService;
     protected readonly IStateProvinceService _stateProvinceService;
     protected readonly ISiteContext _siteContext;
     protected readonly ISiteService _siteService;
     protected readonly IWorkContext _workContext;
     protected readonly MediaSettings _mediaSettings;
-    protected readonly RewardPointsSettings _rewardPointsSettings;
 
     #endregion
 
@@ -68,24 +63,20 @@ public partial class CustomerModelFactory : ICustomerModelFactory
         IAttributeFormatter<AddressAttribute, AddressAttributeValue> addressAttributeFormatter,
         IAttributeParser<CustomerAttribute, CustomerAttributeValue> customerAttributeParser,
         IAttributeService<CustomerAttribute, CustomerAttributeValue> customerAttributeService,
-        IAuthenticationPluginManager authenticationPluginManager,
         IBaseAdminModelFactory baseAdminModelFactory,
         ICountryService countryService,
         ICustomerActivityService customerActivityService,
         ICustomerService customerService,
         IDateTimeHelper dateTimeHelper,
-        IExternalAuthenticationService externalAuthenticationService,
         IGenericAttributeService genericAttributeService,
         IGeoLookupService geoLookupService,
         ILocalizationService localizationService,
-        INewsLetterSubscriptionService newsLetterSubscriptionService,
         IPictureService pictureService,
         IStateProvinceService stateProvinceService,
         ISiteContext siteContext,
         ISiteService siteService,
         IWorkContext workContext,
-        MediaSettings mediaSettings,
-        RewardPointsSettings rewardPointsSettings)
+        MediaSettings mediaSettings)
     {
         _addressSettings = addressSettings;
         _customerSettings = customerSettings;
@@ -95,58 +86,25 @@ public partial class CustomerModelFactory : ICustomerModelFactory
         _addressAttributeFormatter = addressAttributeFormatter;
         _customerAttributeParser = customerAttributeParser;
         _customerAttributeService = customerAttributeService;
-        _authenticationPluginManager = authenticationPluginManager;
         _baseAdminModelFactory = baseAdminModelFactory;
         _countryService = countryService;
         _customerActivityService = customerActivityService;
         _customerService = customerService;
         _dateTimeHelper = dateTimeHelper;
-        _externalAuthenticationService = externalAuthenticationService;
         _genericAttributeService = genericAttributeService;
         _geoLookupService = geoLookupService;
         _localizationService = localizationService;
-        _newsLetterSubscriptionService = newsLetterSubscriptionService;
         _pictureService = pictureService;
         _stateProvinceService = stateProvinceService;
         _siteContext = siteContext;
         _siteService = siteService;
         _workContext = workContext;
         _mediaSettings = mediaSettings;
-        _rewardPointsSettings = rewardPointsSettings;
     }
 
     #endregion
 
     #region Utilities
-
-    /// <summary>
-    /// Prepare customer associated external authorization models
-    /// </summary>
-    /// <param name="models">List of customer associated external authorization models</param>
-    /// <param name="customer">Customer</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    protected virtual async Task PrepareAssociatedExternalAuthModelsAsync(IList<CustomerAssociatedExternalAuthModel> models, Customer customer)
-    {
-        ArgumentNullException.ThrowIfNull(models);
-
-        ArgumentNullException.ThrowIfNull(customer);
-
-        foreach (var record in await _externalAuthenticationService.GetCustomerExternalAuthenticationRecordsAsync(customer))
-        {
-            var method = await _authenticationPluginManager.LoadPluginBySystemNameAsync(record.ProviderSystemName);
-            if (method == null)
-                continue;
-
-            models.Add(new CustomerAssociatedExternalAuthModel
-            {
-                Id = record.Id,
-                Email = record.Email,
-                ExternalIdentifier = !string.IsNullOrEmpty(record.ExternalDisplayIdentifier)
-                    ? record.ExternalDisplayIdentifier : record.ExternalIdentifier,
-                AuthMethodName = method.PluginDescriptor.FriendlyName
-            });
-        }
-    }
 
     /// <summary>
     /// Prepare customer attribute models
@@ -261,33 +219,6 @@ public partial class CustomerModelFactory : ICustomerModelFactory
 
         return searchModel;
     }
-
-    /// <summary>
-    /// Prepare customer back in stock subscriptions search model
-    /// </summary>
-    /// <param name="searchModel">Customer back in stock subscriptions search model</param>
-    /// <param name="customer">Customer</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the customer back in stock subscriptions search model
-    /// </returns>
-    protected virtual async Task<CustomerAssociatedExternalAuthRecordsSearchModel> PrepareCustomerAssociatedExternalAuthRecordsSearchModelAsync(
-        CustomerAssociatedExternalAuthRecordsSearchModel searchModel, Customer customer)
-    {
-        ArgumentNullException.ThrowIfNull(searchModel);
-
-        ArgumentNullException.ThrowIfNull(customer);
-
-        searchModel.CustomerId = customer.Id;
-
-        //prepare page parameters
-        searchModel.SetGridPageSize();
-        //prepare external authentication records
-        await PrepareAssociatedExternalAuthModelsAsync(searchModel.AssociatedExternalAuthRecords, customer);
-
-        return searchModel;
-    }
-
 
     #endregion
 
@@ -485,18 +416,10 @@ public partial class CustomerModelFactory : ICustomerModelFactory
                                                  (await _siteService.GetAllSitesAsync()).Select(x => x.Id).Count() > 1;
                 model.CreatedOn = await _dateTimeHelper.ConvertToUserTimeAsync(customer.CreatedOnUtc, DateTimeKind.Utc);
 
-                //prepare model newsletter subscriptions
-                if (!string.IsNullOrEmpty(customer.Email))
-                {
-                    model.SelectedNewsletterSubscriptionSiteIds = await (await _siteService.GetAllSitesAsync())
-                        .WhereAwait(async site => await _newsLetterSubscriptionService.GetNewsLetterSubscriptionByEmailAndSiteIdAsync(customer.Email, site.Id) != null)
-                        .Select(site => site.Id).ToListAsync();
-                }
             }
 
             //prepare nested search models
             PrepareCustomerActivityLogSearchModel(model.CustomerActivityLogSearchModel, customer);
-            await PrepareCustomerAssociatedExternalAuthRecordsSearchModelAsync(model.CustomerAssociatedExternalAuthRecordsSearchModel, customer);
         }
         else
         {

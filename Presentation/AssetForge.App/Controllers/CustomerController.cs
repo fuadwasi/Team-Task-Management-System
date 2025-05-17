@@ -13,7 +13,7 @@ using AssetForge.Core.Http;
 using AssetForge.Core.Http.Extensions;
 using AssetForge.Services.Attributes;
 using AssetForge.Services.Authentication;
-using AssetForge.Services.Authentication.External;
+
 using AssetForge.Services.Authentication.MultiFactor;
 using AssetForge.Services.Common;
 using AssetForge.Services.Customers;

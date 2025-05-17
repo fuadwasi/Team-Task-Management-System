@@ -5,7 +5,7 @@ using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Media;
 using AssetForge.Core.Domain.Security;
 using AssetForge.Services.Attributes;
-using AssetForge.Services.Authentication.External;
+
 using AssetForge.Services.Authentication.MultiFactor;
 using AssetForge.Services.Common;
 using AssetForge.Services.Customers;
@@ -13,7 +13,6 @@ using AssetForge.Services.Directory;
 using AssetForge.Services.Helpers;
 using AssetForge.Services.Localization;
 using AssetForge.Services.Media;
-using AssetForge.Services.Messages;
 using AssetForge.Services.Security;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Sites;
@@ -29,18 +28,14 @@ namespace AssetForge.App.Factories
         protected readonly CommonSettings _commonSettings;
         protected readonly CustomerSettings _customerSettings;
         protected readonly DateTimeSettings _dateTimeSettings;
-        protected readonly ExternalAuthenticationSettings _externalAuthenticationSettings;
         protected readonly IAttributeParser<CustomerAttribute, CustomerAttributeValue> _customerAttributeParser;
         protected readonly IAttributeService<CustomerAttribute, CustomerAttributeValue> _customerAttributeService;
-        protected readonly IAuthenticationPluginManager _authenticationPluginManager;
         protected readonly ICountryService _countryService;
         protected readonly ICustomerService _customerService;
         protected readonly IDateTimeHelper _dateTimeHelper;
-        protected readonly IExternalAuthenticationService _externalAuthenticationService;
         protected readonly IGenericAttributeService _genericAttributeService;
         protected readonly ILocalizationService _localizationService;
         protected readonly IMultiFactorAuthenticationPluginManager _multiFactorAuthenticationPluginManager;
-        protected readonly INewsLetterSubscriptionService _newsLetterSubscriptionService;
         protected readonly IPermissionService _permissionService;
         protected readonly IPictureService _pictureService;
         protected readonly IStateProvinceService _stateProvinceService;
@@ -49,7 +44,6 @@ namespace AssetForge.App.Factories
         protected readonly IUrlRecordService _urlRecordService;
         protected readonly IWorkContext _workContext;
         protected readonly MediaSettings _mediaSettings;
-        protected readonly RewardPointsSettings _rewardPointsSettings;
         protected readonly SecuritySettings _securitySettings;
 
         #endregion
@@ -61,18 +55,14 @@ namespace AssetForge.App.Factories
             CommonSettings commonSettings,
             CustomerSettings customerSettings,
             DateTimeSettings dateTimeSettings,
-            ExternalAuthenticationSettings externalAuthenticationSettings,
             IAttributeParser<CustomerAttribute, CustomerAttributeValue> customerAttributeParser,
             IAttributeService<CustomerAttribute, CustomerAttributeValue> customerAttributeService,
-            IAuthenticationPluginManager authenticationPluginManager,
             ICountryService countryService,
             ICustomerService customerService,
             IDateTimeHelper dateTimeHelper,
-            IExternalAuthenticationService externalAuthenticationService,
             IGenericAttributeService genericAttributeService,
             ILocalizationService localizationService,
             IMultiFactorAuthenticationPluginManager multiFactorAuthenticationPluginManager,
-            INewsLetterSubscriptionService newsLetterSubscriptionService,
             IPermissionService permissionService,
             IPictureService pictureService,
             IStateProvinceService stateProvinceService,
@@ -81,7 +71,6 @@ namespace AssetForge.App.Factories
             IUrlRecordService urlRecordService,
             IWorkContext workContext,
             MediaSettings mediaSettings,
-            RewardPointsSettings rewardPointsSettings,
             SecuritySettings securitySettings
             )
         {
@@ -90,18 +79,14 @@ namespace AssetForge.App.Factories
             _commonSettings = commonSettings;
             _customerSettings = customerSettings;
             _dateTimeSettings = dateTimeSettings;
-            _externalAuthenticationService = externalAuthenticationService;
-            _externalAuthenticationSettings = externalAuthenticationSettings;
             _customerAttributeParser = customerAttributeParser;
             _customerAttributeService = customerAttributeService;
-            _authenticationPluginManager = authenticationPluginManager;
             _countryService = countryService;
             _customerService = customerService;
             _dateTimeHelper = dateTimeHelper;
             _genericAttributeService = genericAttributeService;
             _localizationService = localizationService;
             _multiFactorAuthenticationPluginManager = multiFactorAuthenticationPluginManager;
-            _newsLetterSubscriptionService = newsLetterSubscriptionService;
             _permissionService = permissionService;
             _pictureService = pictureService;
             _stateProvinceService = stateProvinceService;
@@ -110,7 +95,6 @@ namespace AssetForge.App.Factories
             _urlRecordService = urlRecordService;
             _workContext = workContext;
             _mediaSettings = mediaSettings;
-            _rewardPointsSettings = rewardPointsSettings;
             _securitySettings = securitySettings;
         }
 

@@ -10,7 +10,7 @@ using AssetForge.Core.Infrastructure;
 using AssetForge.Core.Security;
 using AssetForge.Data;
 using AssetForge.Services.Authentication;
-using AssetForge.Services.Authentication.External;
+
 using AssetForge.Services.Common;
 using AssetForge.Web.Framework.Mvc.ModelBinding;
 using AssetForge.Web.Framework.Mvc.ModelBinding.Binders;
@@ -271,14 +271,14 @@ namespace AssetForge.Web.Framework.Infrastructure.Extensions
                 options.AccessDeniedPath = AuthenticationDefaults.AccessDeniedPath;
             });
 
-            //register and configure external authentication plugins now
-            var typeFinder = Singleton<ITypeFinder>.Instance;
-            var externalAuthConfigurations = typeFinder.FindClassesOfType<IExternalAuthenticationRegistrar>();
-            var externalAuthInstances = externalAuthConfigurations
-                .Select(x => (IExternalAuthenticationRegistrar)Activator.CreateInstance(x));
+            ////register and configure external authentication plugins now
+            //var typeFinder = Singleton<ITypeFinder>.Instance;
+            //var externalAuthConfigurations = typeFinder.FindClassesOfType<IExternalAuthenticationRegistrar>();
+            //var externalAuthInstances = externalAuthConfigurations
+            //    .Select(x => (IExternalAuthenticationRegistrar)Activator.CreateInstance(x));
 
-            foreach (var instance in externalAuthInstances)
-                instance.Configure(authenticationBuilder);
+            //foreach (var instance in externalAuthInstances)
+            //    instance.Configure(authenticationBuilder);
         }
 
         /// <summary>

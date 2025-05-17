@@ -97,7 +97,7 @@ public partial interface IBaseAdminModelFactory
     /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
     /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
     /// <returns>A task that represents the asynchronous operation</returns>
-    Task PrepareEmailAccountsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+    //Task PrepareEmailAccountsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
 
     /// <summary>
     /// Prepare available time zones
