@@ -1,0 +1,12 @@
+﻿@*localization service for installation service
+    we do not use standard AssetForge localization because database is not installed yet
+    locale resources for installation process are sited into \App_Data\Localization\Installation directory*@
+@inject IInstallationLocalizationService ILS
+
+@removeTagHelper *, AssetForge.Web.Framework
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@using AssetForge.Data
+@using AssetForge.Services.Common
+@using AssetForge.Web.Models.Install
+@using AssetForge.Web.Infrastructure.Installation

@@ -1,0 +1,69 @@
+﻿@using AssetForge.Core.Domain.Customers
+@using AssetForge.Services
+@model CustomerUserSettingsModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="CustomerSettings.UserRegistrationType" />
+        </div>
+        <div class="col-md-9">
+            <ix-select asp-for="CustomerSettings.UserRegistrationType" asp-items="@(await ((UserRegistrationType)Model.CustomerSettings.UserRegistrationType).ToSelectListAsync())" />
+            <span asp-validation-for="CustomerSettings.UserRegistrationType"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="CustomerSettings.NotifyNewCustomerRegistration" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="CustomerSettings.NotifyNewCustomerRegistration" />
+            <span asp-validation-for="CustomerSettings.NotifyNewCustomerRegistration"></span>
+        </div>
+    </div>
+    @* <div class="form-group row advanced-setting">
+        <div class="col-md-3">
+            <ix-label asp-for="CustomerSettings.RequireRegistrationForDownloadableProducts" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="CustomerSettings.RequireRegistrationForDownloadableProducts" />
+            <span asp-validation-for="CustomerSettings.RequireRegistrationForDownloadableProducts"></span>
+        </div>
+    </div> *@
+    @* <div class="form-group row advanced-setting">
+        <div class="col-md-3">
+            <ix-label asp-for="CustomerSettings.AllowCustomersToCheckGiftCardBalance" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="CustomerSettings.AllowCustomersToCheckGiftCardBalance" />
+            <span asp-validation-for="CustomerSettings.AllowCustomersToCheckGiftCardBalance"></span>
+        </div>
+    </div> *@
+    <div class="form-group row advanced-setting">
+        <div class="col-md-3">
+            <ix-label asp-for="DateTimeSettings.AllowCustomersToSetTimeZone" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DateTimeSettings.AllowCustomersToSetTimeZone" />
+            <span asp-validation-for="DateTimeSettings.AllowCustomersToSetTimeZone"></span>
+        </div>
+    </div>
+    <div class="form-group row advanced-setting">
+        <div class="col-md-3">
+            <ix-label asp-for="DateTimeSettings.DefaultSiteTimeZoneId" />
+        </div>
+        <div class="col-md-9">
+            <ix-select asp-for="DateTimeSettings.DefaultSiteTimeZoneId" asp-items="Model.DateTimeSettings.AvailableTimeZones" />
+            <span asp-validation-for="DateTimeSettings.DefaultSiteTimeZoneId"></span>
+        </div>
+    </div>
+    <div class="form-group row advanced-setting">
+        <div class="col-md-3">
+            <ix-label asp-for="ExternalAuthenticationSettings.AllowCustomersToRemoveAssociations" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="ExternalAuthenticationSettings.AllowCustomersToRemoveAssociations" />
+            <span asp-validation-for="ExternalAuthenticationSettings.AllowCustomersToRemoveAssociations"></span>
+        </div>
+    </div>
+</div>

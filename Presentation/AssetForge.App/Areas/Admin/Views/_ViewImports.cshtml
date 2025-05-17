@@ -1,0 +1,55 @@
+﻿@inherits AssetForge.Web.Framework.Mvc.Razor.RazorPage<TModel>
+
+@inject IGenericAttributeService genericAttributeService
+@inject IAssetForgeHtmlHelper AssetForgeHtml
+@inject IWorkContext workContext
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, AssetForge.Web.Framework
+
+@using System.Globalization;
+@using System.Net;
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@using Microsoft.AspNetCore.Routing
+@using Microsoft.Extensions.Primitives
+@using AssetForge.Core
+@using AssetForge.Core.Domain.Common
+@using AssetForge.Core.Events
+@using AssetForge.Core.Infrastructure
+@using AssetForge.Services.Common
+@using AssetForge.Web.Framework.Mvc.Routing
+@using static AssetForge.Services.Common.AssetForgeLinksDefaults
+@using AssetForge.App.Areas.Admin
+@using AssetForge.App.Areas.Admin.Components
+@using AssetForge.App.Areas.Admin.Helpers
+@using AssetForge.App.Areas.Admin.Models.Attributes
+@using AssetForge.App.Areas.Admin.Models.Cms
+@using AssetForge.App.Areas.Admin.Models.Common
+@using AssetForge.App.Areas.Admin.Models.Customers
+@using AssetForge.App.Areas.Admin.Models.Directory
+@using AssetForge.App.Areas.Admin.Models.ExternalAuthentication
+@using AssetForge.App.Areas.Admin.Models.Home
+@using AssetForge.App.Areas.Admin.Models.Localization
+@using AssetForge.App.Areas.Admin.Models.Logging
+@using AssetForge.App.Areas.Admin.Models.Messages
+@using AssetForge.App.Areas.Admin.Models.MultiFactorAuthentication
+@using AssetForge.App.Areas.Admin.Models.Plugins
+@using AssetForge.App.Areas.Admin.Models.Security
+@using AssetForge.App.Areas.Admin.Models.Settings
+@using AssetForge.App.Areas.Admin.Models.Sites
+@using AssetForge.App.Areas.Admin.Models.Tasks
+@using AssetForge.App.Areas.Admin.Models.Templates
+@using AssetForge.App.Extensions
+@using AssetForge.Web.Framework
+@using AssetForge.Web.Framework.Events
+@using AssetForge.Web.Framework.Extensions
+@using AssetForge.Web.Framework.Infrastructure
+@using AssetForge.Web.Framework.Menu
+@using AssetForge.Web.Framework.Models
+@using AssetForge.Web.Framework.Models.Cms
+@using AssetForge.Web.Framework.Models.DataTables
+@using AssetForge.Web.Framework.Security.Captcha
+@using AssetForge.Web.Framework.Security.Honeypot
+@using AssetForge.Web.Framework.Themes 
+@using AssetForge.Web.Framework.UI

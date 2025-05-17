@@ -1,0 +1,441 @@
+﻿using Azure.Identity;
+using Azure.Storage.Blobs;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using AssetForge.Core;
+using AssetForge.Core.Configuration;
+using AssetForge.Core.Domain.Common;
+using AssetForge.Core.Http;
+using AssetForge.Core.Infrastructure;
+using AssetForge.Core.Security;
+using AssetForge.Data;
+using AssetForge.Services.Authentication;
+using AssetForge.Services.Authentication.External;
+using AssetForge.Services.Common;
+using AssetForge.Web.Framework.Mvc.ModelBinding;
+using AssetForge.Web.Framework.Mvc.ModelBinding.Binders;
+using AssetForge.Web.Framework.Security.Captcha;
+using AssetForge.Web.Framework.Themes;
+using AssetForge.Web.Framework.Validators;
+using AssetForge.Web.Framework.WebOptimizer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Razor;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Newtonsoft.Json.Serialization;
+using System.Net;
+using System.Threading.RateLimiting;
+using WebMarkupMin.AspNetCore8;
+using WebMarkupMin.Core;
+using WebMarkupMin.NUglify;
+
+namespace AssetForge.Web.Framework.Infrastructure.Extensions
+{
+    public static class ServiceCollectionExtensions
+    {
+        public static void ConfigureApplicationSettings(this IServiceCollection services, WebApplicationBuilder builder)
+        {
+            //let the operating system decide what TLS protocol version to use
+            //see https://docs.microsoft.com/dotnet/framework/network-programming/tls
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
+
+            //create default file provider
+            CommonHelper.DefaultFileProvider = new AssetForgeFileProvider(builder.Environment);
+
+            //register type finder
+            var typeFinder = new WebAppTypeFinder();
+            Singleton<ITypeFinder>.Instance = typeFinder;
+            services.AddSingleton<ITypeFinder>(typeFinder);
+
+            //add configuration parameters
+            var configurations = typeFinder
+                .FindClassesOfType<IConfig>()
+                .Select(configType => (IConfig)Activator.CreateInstance(configType))
+                .ToList();
+
+            foreach (var config in configurations)
+                builder.Configuration.GetSection(config.Name).Bind(config, options => options.BindNonPublicProperties = true);
+
+            var appSettings = AppSettingsHelper.SaveAppSettings(configurations, CommonHelper.DefaultFileProvider, false);
+
+            services.AddSingleton(appSettings);
+        }
+
+        /// <summary>
+        /// Add services to the application and configure service provider
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        /// <param name="builder">A builder for web applications and services</param>
+        public static void ConfigureApplicationServices(this IServiceCollection services, WebApplicationBuilder builder)
+        {
+            //add accessor to HttpContext
+            services.AddHttpContextAccessor();
+
+            //initialize plugins
+            var mvcCoreBuilder = services.AddMvcCore();
+            var pluginConfig = new PluginConfig();
+            builder.Configuration.GetSection(nameof(PluginConfig)).Bind(pluginConfig, options => options.BindNonPublicProperties = true);
+            mvcCoreBuilder.PartManager.InitializePlugins(pluginConfig);
+            // create engine and configure service provider
+            var engine = EngineContext.Create();
+
+            builder.Services.AddRateLimiter(options =>
+            {
+                var settings = Singleton<AppSettings>.Instance.Get<CommonConfig>();
+
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = settings.PermitLimit,
+                            QueueLimit = settings.QueueCount,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
+
+                options.RejectionStatusCode = settings.RejectionStatusCode;
+            });
+
+            engine.ConfigureServices(services, builder.Configuration);
+        }
+
+        /// <summary>
+        /// Register HttpContextAccessor
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddHttpContextAccessor(this IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+        }
+
+        /// <summary>
+        /// Adds services required for anti-forgery support
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAntiForgery(this IServiceCollection services)
+        {
+            //override cookie name
+            services.AddAntiforgery(options =>
+            {
+                options.Cookie.Name = $"{CookieDefaults.Prefix}{CookieDefaults.AntiforgeryCookie}";
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            });
+        }
+
+        /// <summary>
+        /// Adds services required for application session state
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddHttpSession(this IServiceCollection services)
+        {
+            services.AddSession(options =>
+            {
+                options.Cookie.Name = $"{CookieDefaults.Prefix}{CookieDefaults.SessionCookie}";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            });
+        }
+
+        /// <summary>
+        /// Adds services required for themes support
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddThemes(this IServiceCollection services)
+        {
+            if (!DataSettingsManager.IsDatabaseInstalled())
+                return;
+
+            //themes support
+            services.Configure<RazorViewEngineOptions>(options =>
+            {
+                options.ViewLocationExpanders.Add(new ThemeableViewLocationExpander());
+            });
+        }
+
+        /// <summary>
+        /// Adds services required for distributed cache
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddDistributedCache(this IServiceCollection services)
+        {
+            var appSettings = Singleton<AppSettings>.Instance;
+            var distributedCacheConfig = appSettings.Get<DistributedCacheConfig>();
+
+            if (!distributedCacheConfig.Enabled)
+                return;
+
+            switch (distributedCacheConfig.DistributedCacheType)
+            {
+                case DistributedCacheType.Memory:
+                    services.AddDistributedMemoryCache();
+                    break;
+
+                case DistributedCacheType.SqlServer:
+                    services.AddDistributedSqlServerCache(options =>
+                    {
+                        options.ConnectionString = distributedCacheConfig.ConnectionString;
+                        options.SchemaName = distributedCacheConfig.SchemaName;
+                        options.TableName = distributedCacheConfig.TableName;
+                    });
+                    break;
+
+                case DistributedCacheType.Redis:
+                    services.AddStackExchangeRedisCache(options =>
+                    {
+                        options.Configuration = distributedCacheConfig.ConnectionString;
+                        options.InstanceName = distributedCacheConfig.InstanceName ?? string.Empty;
+                    });
+                    break;
+
+                case DistributedCacheType.RedisSynchronizedMemory:
+                    services.AddStackExchangeRedisCache(options =>
+                    {
+                        options.Configuration = distributedCacheConfig.ConnectionString;
+                        options.InstanceName = distributedCacheConfig.InstanceName ?? string.Empty;
+                    });
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Adds data protection services
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeDataProtection(this IServiceCollection services)
+        {
+            var appSettings = Singleton<AppSettings>.Instance;
+            if (appSettings.Get<AzureBlobConfig>().Enabled && appSettings.Get<AzureBlobConfig>().SiteDataProtectionKeys)
+            {
+                var blobServiceClient = new BlobServiceClient(appSettings.Get<AzureBlobConfig>().ConnectionString);
+                var blobContainerClient = blobServiceClient.GetBlobContainerClient(appSettings.Get<AzureBlobConfig>().DataProtectionKeysContainerName);
+                var blobClient = blobContainerClient.GetBlobClient(DataProtectionDefaults.AzureDataProtectionKeyFile);
+
+                var dataProtectionBuilder = services.AddDataProtection().PersistKeysToAzureBlobStorage(blobClient);
+
+                if (!appSettings.Get<AzureBlobConfig>().DataProtectionKeysEncryptWithVault)
+                    return;
+
+                var keyIdentifier = appSettings.Get<AzureBlobConfig>().DataProtectionKeysVaultId;
+                var credentialOptions = new DefaultAzureCredentialOptions();
+                var tokenCredential = new DefaultAzureCredential(credentialOptions);
+
+                dataProtectionBuilder.ProtectKeysWithAzureKeyVault(new Uri(keyIdentifier), tokenCredential);
+            }
+            else
+            {
+                var dataProtectionKeysPath = CommonHelper.DefaultFileProvider.MapPath(DataProtectionDefaults.DataProtectionKeysPath);
+                var dataProtectionKeysFolder = new System.IO.DirectoryInfo(dataProtectionKeysPath);
+
+                //configure the data protection system to persist keys to the specified directory
+                services.AddDataProtection().PersistKeysToFileSystem(dataProtectionKeysFolder);
+            }
+        }
+
+        /// <summary>
+        /// Adds authentication service
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeAuthentication(this IServiceCollection services)
+        {
+            //set default authentication schemes
+            var authenticationBuilder = services.AddAuthentication(options =>
+            {
+                options.DefaultChallengeScheme = AuthenticationDefaults.AuthenticationScheme;
+                options.DefaultScheme = AuthenticationDefaults.AuthenticationScheme;
+                options.DefaultSignInScheme = AuthenticationDefaults.ExternalAuthenticationScheme;
+            });
+
+            //add main cookie authentication
+            authenticationBuilder.AddCookie(AuthenticationDefaults.AuthenticationScheme, options =>
+            {
+                options.Cookie.Name = $"{CookieDefaults.Prefix}{CookieDefaults.AuthenticationCookie}";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.LoginPath = AuthenticationDefaults.LoginPath;
+                options.AccessDeniedPath = AuthenticationDefaults.AccessDeniedPath;
+            });
+
+            //add external authentication
+            authenticationBuilder.AddCookie(AuthenticationDefaults.ExternalAuthenticationScheme, options =>
+            {
+                options.Cookie.Name = $"{CookieDefaults.Prefix}{CookieDefaults.ExternalAuthenticationCookie}";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                options.LoginPath = AuthenticationDefaults.LoginPath;
+                options.AccessDeniedPath = AuthenticationDefaults.AccessDeniedPath;
+            });
+
+            //register and configure external authentication plugins now
+            var typeFinder = Singleton<ITypeFinder>.Instance;
+            var externalAuthConfigurations = typeFinder.FindClassesOfType<IExternalAuthenticationRegistrar>();
+            var externalAuthInstances = externalAuthConfigurations
+                .Select(x => (IExternalAuthenticationRegistrar)Activator.CreateInstance(x));
+
+            foreach (var instance in externalAuthInstances)
+                instance.Configure(authenticationBuilder);
+        }
+
+        /// <summary>
+        /// Add and configure MVC for the application
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        /// <returns>A builder for configuring MVC services</returns>
+        public static IMvcBuilder AddAssetForgeMvc(this IServiceCollection services)
+        {
+            //add basic MVC feature
+            var mvcBuilder = services.AddControllersWithViews();
+
+            mvcBuilder.AddRazorRuntimeCompilation();
+
+            var appSettings = Singleton<AppSettings>.Instance;
+            if (appSettings.Get<CommonConfig>().UseSessionStateTempDataProvider)
+            {
+                //use session-based temp data provider
+                mvcBuilder.AddSessionStateTempDataProvider();
+            }
+            else
+            {
+                //use cookie-based temp data provider
+                mvcBuilder.AddCookieTempDataProvider(options =>
+                {
+                    options.Cookie.Name = $"{CookieDefaults.Prefix}{CookieDefaults.TempDataCookie}";
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                });
+            }
+
+            services.AddRazorPages();
+
+            //MVC now serializes JSON with camel case names by default, use this code to avoid it
+            mvcBuilder.AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+
+            //set some options
+            mvcBuilder.AddMvcOptions(options =>
+            {
+                options.ModelBinderProviders.Insert(1, new ModelBinderProvider());
+                //add custom display metadata provider
+                options.ModelMetadataDetailsProviders.Add(new MetadataProvider());
+
+                //in .NET model binding for a non-nullable property may fail with an error message "The value '' is invalid"
+                //here we set the locale name as the message, we'll replace it with the actual one later when not-null validation failed
+                options.ModelBindingMessageProvider.SetValueMustNotBeNullAccessor(_ => ValidationDefaults.NotNullValidationLocaleName);
+            });
+
+            //add fluent validation
+            services.AddFluentValidationAutoValidation().AddFluentValidationClientsideAdapters();
+
+            //register all available validators from AssetForge assemblies
+            var assemblies = mvcBuilder.PartManager.ApplicationParts
+                .OfType<AssemblyPart>()
+                .Where(part => part.Name.StartsWith("AssetForge", StringComparison.InvariantCultureIgnoreCase))
+                .Select(part => part.Assembly);
+            services.AddValidatorsFromAssemblies(assemblies);
+
+            //register controllers as services, it'll allow to override them
+            mvcBuilder.AddControllersAsServices();
+
+            return mvcBuilder;
+        }
+
+        /// <summary>
+        /// Register custom RedirectResultExecutor
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeRedirectResultExecutor(this IServiceCollection services)
+        {
+            //we use custom redirect executor as a workaround to allow using non-ASCII characters in redirect URLs
+            services.AddScoped<IActionResultExecutor<RedirectResult>, RedirectResultExecutor>();
+        }
+
+        /// <summary>
+        /// Add and configure WebMarkupMin service
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeWebMarkupMin(this IServiceCollection services)
+        {
+            //check whether database is installed
+            if (!DataSettingsManager.IsDatabaseInstalled())
+                return;
+
+            services
+                .AddWebMarkupMin(options =>
+                {
+                    options.AllowMinificationInDevelopmentEnvironment = true;
+                    options.AllowCompressionInDevelopmentEnvironment = true;
+                    options.DisableMinification = !EngineContext.Current.Resolve<CommonSettings>().EnableHtmlMinification;
+                    options.DisableCompression = true;
+                    options.DisablePoweredByHttpHeaders = true;
+                })
+                .AddHtmlMinification(options =>
+                {
+                    options.MinificationSettings.AttributeQuotesRemovalMode = HtmlAttributeQuotesRemovalMode.KeepQuotes;
+
+                    options.CssMinifierFactory = new NUglifyCssMinifierFactory();
+                    options.JsMinifierFactory = new NUglifyJsMinifierFactory();
+                })
+                .AddXmlMinification(options =>
+                {
+                    var settings = options.MinificationSettings;
+                    settings.RenderEmptyTagsWithSpace = true;
+                    settings.CollapseTagsWithoutContent = true;
+                });
+        }
+
+        /// <summary>
+        /// Adds WebOptimizer to the specified <see cref="IServiceCollection"/> and enables CSS and JavaScript minification.
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeWebOptimizer(this IServiceCollection services)
+        {
+            var appSettings = Singleton<AppSettings>.Instance;
+            var woConfig = appSettings.Get<WebOptimizerConfig>();
+
+            if (!woConfig.EnableCssBundling && !woConfig.EnableJavaScriptBundling)
+            {
+                services.AddScoped<IAssetHelper, DefaultAssetHelper>();
+                return;
+            }
+
+            //add minification & bundling
+            var cssSettings = new CssBundlingSettings
+            {
+                FingerprintUrls = false,
+                Minify = woConfig.EnableCssBundling
+            };
+
+            var codeSettings = new CodeBundlingSettings
+            {
+                Minify = woConfig.EnableJavaScriptBundling,
+                AdjustRelativePaths = false //disable this feature because it breaks function names that have "Url(" at the end
+            };
+
+            services.AddWebOptimizer(null, cssSettings, codeSettings);
+            services.AddScoped<IAssetHelper, AssetHelper>();
+        }
+
+        /// <summary>
+        /// Add and configure default HTTP clients
+        /// </summary>
+        /// <param name="services">Collection of service descriptors</param>
+        public static void AddAssetForgeHttpClients(this IServiceCollection services)
+        {
+            //default client
+            services.AddHttpClient(HttpDefaults.DefaultHttpClient).WithProxy();
+
+            //client to request current site
+            services.AddHttpClient<SiteHttpClient>();
+
+            //client to request AssetForge official site
+            //services.AddHttpClient<HttpClient>().WithProxy();
+            services.AddHttpClient<AssetForgeHttpClient>().WithProxy();
+
+            //client to request reCAPTCHA service
+            services.AddHttpClient<CaptchaHttpClient>().WithProxy();
+        }
+    }
+}

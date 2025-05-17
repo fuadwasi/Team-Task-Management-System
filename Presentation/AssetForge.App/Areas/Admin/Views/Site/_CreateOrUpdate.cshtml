@@ -1,0 +1,34 @@
+﻿@model SiteModel
+
+@{
+    const string hideInfoBlockAttributeName = "SiteDetails.HideInfoBlock";
+    var customer = await workContext.GetCurrentCustomerAsync();
+    var hideInfoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideInfoBlockAttributeName);
+
+    const string hideSeoBlockAttributeName = "SiteDetails.HideSeoBlock";
+    var hideSeoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideSeoBlockAttributeName, defaultValue: true);
+}
+
+<div asp-validation-summary="All"></div>
+<input asp-for="Id" type="hidden" />
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-md-12 clearfix">
+                    <div class="float-left">
+                        @await Component.InvokeAsync(typeof(SettingModeViewComponent), new { modeName = "site-advanced-mode" })
+                    </div>
+                </div>
+            </div>
+            
+            <ix-cards id="site-item-cards">
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.SiteDetailsTop, additionalData = Model })
+                <ix-card asp-name="site-item-info" asp-icon="fas fa-info" asp-title="@T("Admin.Configuration.Sites.Info")" asp-hide-block-attribute-name="@hideInfoBlockAttributeName" asp-hide="@hideInfoBlock">@await Html.PartialAsync("_CreateOrUpdate.Info", Model)</ix-card>
+                <ix-card asp-name="site-item-seo" asp-icon="fas fa-search-plus" asp-title="@T("Admin.Common.SEO")" asp-hide-block-attribute-name="@hideSeoBlockAttributeName" asp-advanced="true" asp-hide="@hideSeoBlock">@await Html.PartialAsync("_CreateOrUpdate.Seo", Model)</ix-card>
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.SiteDetailsBottom, additionalData = Model })
+            </ix-cards>
+        </div>
+    </div>
+</section>

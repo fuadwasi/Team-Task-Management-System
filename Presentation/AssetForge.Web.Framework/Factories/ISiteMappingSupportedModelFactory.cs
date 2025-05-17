@@ -1,0 +1,31 @@
+﻿using AssetForge.Core;
+using AssetForge.Core.Domain.Sites;
+using AssetForge.Web.Framework.Models;
+
+namespace AssetForge.Web.Framework.Factories;
+
+/// <summary>
+/// Represents the Site mapping supported model factory
+/// </summary>
+public partial interface ISiteMappingSupportedModelFactory
+{
+    /// <summary>
+    /// Prepare selected and all available sites for the passed model
+    /// </summary>
+    /// <typeparam name="TModel">Site mapping supported model type</typeparam>
+    /// <param name="model">Model</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareModelSitesAsync<TModel>(TModel model) where TModel : ISiteMappingSupportedModel;
+
+    /// <summary>
+    /// Prepare selected and all available sites for the passed model by site mappings
+    /// </summary>
+    /// <typeparam name="TModel">Site mapping supported model type</typeparam>
+    /// <typeparam name="TEntity">Site mapping supported entity type</typeparam>
+    /// <param name="model">Model</param>
+    /// <param name="entity">Entity</param>
+    /// <param name="ignoreSiteMappings">Whether to ignore existing site mappings</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareModelSitesAsync<TModel, TEntity>(TModel model, TEntity entity, bool ignoreSiteMappings)
+        where TModel : ISiteMappingSupportedModel where TEntity : BaseEntity, ISiteMappingSupported;
+}

@@ -1,0 +1,28 @@
+﻿@model DashboardModel
+@inject IPermissionService permissionService
+@using AssetForge.Services.Security
+@{
+    //page title
+    ViewBag.PageTitle = T("Admin.Dashboard").Text;
+
+    var canManageOrders = await permissionService.AuthorizeAsync(StandardPermissionProvider.ManageOrders);
+    var canManageCustomers = await permissionService.AuthorizeAsync(StandardPermissionProvider.ManageCustomers);
+    var canManageProducts = await permissionService.AuthorizeAsync(StandardPermissionProvider.ManageProducts);
+    var canManageReturnRequests = await permissionService.AuthorizeAsync(StandardPermissionProvider.ManageReturnRequests);
+
+    //close configuration steps value
+    const string closeCardAttributeName = "CloseConfigurationSteps";
+    var closeConfigurationStepsCard = await genericAttributeService.GetAttributeAsync<bool>(await workContext.GetCurrentCustomerAsync(), closeCardAttributeName);
+
+    //active menu item (system name)
+    AssetForgeHtml.SetActiveMenuItemSystemName("Dashboard");
+}
+
+<link rel="stylesheet" href="~/lib_npm/ionicons/css/ionicons.min.css" />
+<script src="~/js/admin.table.js" asp-location="Footer"></script>
+
+<div class="content-header">
+    <h1>
+        @T("Admin.Dashboard")
+    </h1>
+</div>

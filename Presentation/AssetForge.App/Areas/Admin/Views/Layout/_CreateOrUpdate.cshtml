@@ -1,0 +1,26 @@
+@model LayoutModel
+
+@inject IWebHelper webHelper
+@{
+
+    var customer = await workContext.GetCurrentCustomerAsync();
+    const string hideInfoBlockAttributeName = "LayoutPage.HideInfoBlock";
+    var hideInfoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideInfoBlockAttributeName);
+    const string hideWidgetBlockAttributeName = "LayoutPage.HideWidgetBlock";
+    var hideWidgetBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideWidgetBlockAttributeName);
+
+}
+
+<div asp-validation-summary="ModelOnly"></div>
+<input asp-for="Id" type="hidden" />
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div id="layout-cards">
+                <ix-card asp-name="customer-info" asp-icon="fas fa-info" asp-title="@T("Admin.ContentManagement.Layouts.Info")" asp-hide-block-attribute-name="@hideInfoBlockAttributeName" asp-hide="@hideInfoBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.Info", Model)</ix-card>
+                <ix-card asp-name="customer-activitylog" asp-icon="fas fa-list-alt" asp-title="@T("Admin.ContentManagement.Layouts.WidgetMap")" asp-hide-block-attribute-name="@hideWidgetBlockAttributeName" asp-hide="@hideWidgetBlock" asp-advanced="true">@await Html.PartialAsync("_CreateOrUpdate.WidgetMap", Model)</ix-card>
+            </div>
+        </div>
+    </div>
+</section>

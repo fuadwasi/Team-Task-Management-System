@@ -1,0 +1,38 @@
+﻿@model TemplatesModel
+
+@inject IEventPublisher eventPublisher
+
+@{
+    //page title
+    ViewBag.PageTitle = T("Admin.System.Templates").Text;
+    //active menu item (system name)
+    AssetForgeHtml.SetActiveMenuItemSystemName("Templates");
+}
+
+@{
+    var customer = await workContext.GetCurrentCustomerAsync();
+
+    const string hidePageBlockAttributeName = "Templates.HidePageBlock";
+    var hidePageBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hidePageBlockAttributeName);
+}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="content-header clearfix">
+                    <h3 class="float-left">
+                        @T("Admin.System.Templates")
+                    </h3>
+                </div>
+            </div>
+
+
+            <ix-cards id="templates-cards">
+                <ix-card asp-name="templates-page" asp-icon="fas fa-book" asp-title="@T("Admin.System.Templates.Page")" asp-hide-block-attribute-name="@hidePageBlockAttributeName" asp-hide="@hidePageBlock">@await Html.PartialAsync("_List.Page", Model)</ix-card>
+
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.TemplatesDetailsBlock, additionalData = Model })
+            </ix-cards>
+        </div>
+    </div>
+</section>

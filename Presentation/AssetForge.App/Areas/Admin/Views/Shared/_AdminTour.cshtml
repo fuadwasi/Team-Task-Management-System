@@ -1,0 +1,170 @@
+﻿@using AssetForge.Web.Framework.Models.AdminAreaTour
+@inject AssetForge.Services.Sites.ISiteService siteService
+@inject AssetForge.Services.Messages.IEmailAccountService emailAccountService
+@inject AssetForge.Services.Topics.ITopicService topicService
+
+@{
+    var showTour = ViewBag.ShowTour ?? false;
+}
+
+@if (showTour)
+{
+    <link rel="stylesheet" href="~/lib_npm/shepherd.js/css/shepherd.css" />
+    <script src="~/lib_npm/shepherd.js/js/shepherd.min.js"></script>
+    <script src="~/js/admintour/admin.tour.common.js"></script>
+
+    int? entityId = null;
+    var tourStep = (TourStep)ViewBag.TourStep;
+    switch (tourStep)
+    {
+        case TourStep.GeneralSettings:
+            entityId = (await siteService.GetAllSitesAsync()).FirstOrDefault()?.Id ?? 0;
+
+            <script asp-exclude-from-bundle="true" asp-location="Footer" src="~/js/admintour/admin.tour.generalsettings.js"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    PersonalizeSiteIntroTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.Intro.Title").Text)',
+                    PersonalizeSiteIntroText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.Intro.Text").Text)',
+
+                    PersonalizeSiteBasicAdvancedTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.BasicAdvanced.Title").Text)',
+                    PersonalizeSiteBasicAdvancedText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.BasicAdvanced.Text").Text)',
+
+                    PersonalizeSiteThemeTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.Theme.Title").Text)',
+
+                    PersonalizeSiteLogoTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.Logo.Title").Text)',
+                    PersonalizeSiteLogoText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.PersonalizeSite.Logo.Text").Text)',
+                };
+            </script>
+            break;
+
+        case TourStep.Site:
+
+            <script asp-exclude-from-bundle="true"  src="~/js/admintour/admin.tour.site.js" asp-location="Footer"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    Back: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Back").Text)',
+                    NextStep: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.NextStep").Text)',
+                    NextTopic: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.NextTopic").Text)',
+
+                    SiteNameTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Site.Name.Title").Text)',
+                    SiteNameText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Site.Name.Text").Text)',
+
+                    SiteUrlTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Site.Url.Title").Text)',
+                    SiteUrlText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Site.Url.Text").Text)',
+
+                    SiteSslTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Site.Ssl.Title").Text)',
+                };
+            </script>
+            break;
+
+        case TourStep.EmailAccountList:
+            entityId = (await emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault()?.Id ?? 0;
+
+            <script asp-exclude-from-bundle="true" src="~/js/admintour/admin.tour.emailaccountlist.js" asp-location="Footer"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    EmailAccountListEmailAccounts1Title: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.EmailAccounts1.Title").Text)',
+                    EmailAccountListEmailAccounts1Text: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.EmailAccounts1.Text").Text)',
+
+                    EmailAccountListEmailAccounts2Title: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.EmailAccounts2.Title").Text)',
+                    EmailAccountListEmailAccounts2Text: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.EmailAccounts2.Text").Text)',
+
+                    EmailAccountListDefaultEmailAccountTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.DefaultEmailAccount.Title").Text)',
+                    EmailAccountListDefaultEmailAccountText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.DefaultEmailAccount.Text").Text)',
+
+                    EmailAccountListEditTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.Edit.Title").Text)',
+                    EmailAccountListEditText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccountList.Edit.Text").Text)',
+                };
+            </script>
+            break;
+
+        case TourStep.EmailAccount:
+
+            <script asp-exclude-from-bundle="true" src="~/js/admintour/admin.tour.emailaccount.js" asp-location="Footer"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    EmailAccountEmailAddressTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.EmailAddress.Title").Text)',
+                    EmailAccountEmailAddressText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.EmailAddress.Text").Text)',
+
+                    EmailAccountDisplayNameTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.DisplayName.Title").Text)',
+                    EmailAccountDisplayNameText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.DisplayName.Text").Text)',
+
+                    EmailAccountHostTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Host.Title").Text)',
+                    EmailAccountHostText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Host.Text").Text)',
+
+                    EmailAccountPortTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Port.Title").Text)',
+                    EmailAccountPortText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Port.Text").Text)',
+
+                    EmailAccountUsernameTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Username.Title").Text)',
+                    EmailAccountUsernameText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Username.Text").Text)',
+
+                    EmailAccountPasswordTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Password.Title").Text)',
+                    EmailAccountPasswordText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.Password.Text").Text)',
+
+                    EmailAccountUseSslTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.UseSsl.Title").Text)',
+                    EmailAccountUseSslText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.UseSsl.Text").Text)',
+
+                    EmailAccountDefaultCredentialsTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.DefaultCredentials.Title").Text)',
+                    EmailAccountDefaultCredentialsText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.DefaultCredentials.Text").Text)',
+
+                    EmailAccountTestEmailTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.TestEmail.Title").Text)',
+                    EmailAccountTestEmailText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.EmailAccount.TestEmail.Text").Text)',
+                };
+            </script>
+            break;
+
+        case TourStep.TopicList:
+            entityId = (await topicService.GetTopicBySystemNameAsync("ShippingInfo"))?.Id ?? 0;
+
+            <script asp-exclude-from-bundle="true" src="~/js/admintour/admin.tour.pagelist.js" asp-location="Footer"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    Done: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Done").Text)',
+
+                    TopicListTopics1Title: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Topics1.Title").Text)',
+                    TopicListTopics1Text: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Topics1.Text").Text)',
+
+                    TopicListTopics2Title: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Topics2.Title").Text)',
+                    TopicListTopics2Text: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Topics2.Text").Text)',
+
+                    TopicListShippingTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Shipping.Title").Text)',
+                    TopicListShippingText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Shipping.Text").Text)',
+
+                    TopicListLocationTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Location.Title").Text)',
+                    TopicListLocationText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Location.Text").Text)',
+
+                    TopicListEditTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Edit.Title").Text)',
+                    TopicListEditText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.TopicList.Edit.Text").Text)',
+                };
+            </script>
+            break;
+
+        case TourStep.Topic:
+
+            <script asp-exclude-from-bundle="true" src="~/js/admintour/admin.tour.page.js" asp-location="Footer"></script>
+            <script asp-location="Footer">
+                var localized_data = {
+                    Done: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Done").Text)',
+
+                    TopicTitleContentTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Topic.TitleContent.Title").Text)',
+                    TopicTitleContentText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Topic.TitleContent.Text").Text)',
+
+                    TopicPreviewTitle: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Topic.Preview.Title").Text)',
+                    TopicPreviewText: '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Topic.Preview.Text").Text)',
+                };
+            </script>
+            break;
+
+        default:
+            break;
+    }
+
+    <script asp-location="Footer">
+        localized_data.Back = '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.Back").Text)';
+        localized_data.NextStep = '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.NextStep").Text)';
+        localized_data.NextTopic = '@JavaScriptEncoder.Default.Encode(T("Admin.ConfigurationSteps.NextTopic").Text)';
+
+        AdminTourDataProvider.init(localized_data, @entityId);
+    </script>
+}
+

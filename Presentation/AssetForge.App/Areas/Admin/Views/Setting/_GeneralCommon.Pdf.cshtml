@@ -1,0 +1,44 @@
+@model GeneralCommonSettingsModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="PdfSettings.LogoPictureId_OverrideForSite" asp-parent-container="pdf-logo-picture" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="PdfSettings.LogoPictureId" />
+        </div>
+        <div class="col-md-9" id="pdf-logo-picture">
+            <ix-editor asp-for="PdfSettings.LogoPictureId" />
+            <span asp-validation-for="PdfSettings.LogoPictureId"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="PdfSettings.PdfFooterTextColumn1_OverrideForSite" asp-input="PdfSettings.PdfFooterTextColumn1" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="PdfSettings.PdfFooterTextColumn1" />
+        </div>
+        <div class="col-md-9">
+            <ix-textarea asp-for="PdfSettings.PdfFooterTextColumn1" />
+            <span asp-validation-for="PdfSettings.PdfFooterTextColumn1"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="PdfSettings.PdfFooterTextColumn2_OverrideForSite" asp-input="PdfSettings.PdfFooterTextColumn2" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="PdfSettings.PdfFooterTextColumn2" />
+        </div>
+        <div class="col-md-9">
+            <ix-textarea asp-for="PdfSettings.PdfFooterTextColumn2" />
+            <span asp-validation-for="PdfSettings.PdfFooterTextColumn2"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="PdfSettings.LetterPageSizeEnabled_OverrideForSite" asp-input="PdfSettings.LetterPageSizeEnabled" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="PdfSettings.LetterPageSizeEnabled" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="PdfSettings.LetterPageSizeEnabled" />
+            <span asp-validation-for="PdfSettings.LetterPageSizeEnabled"></span>
+        </div>
+    </div>
+</div>

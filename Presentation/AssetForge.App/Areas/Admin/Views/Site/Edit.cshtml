@@ -1,0 +1,42 @@
+@model SiteModel
+@using AssetForge.Web.Framework.Models.AdminAreaTour
+
+@{
+    //page title
+    ViewBag.PageTitle = T("Admin.Configuration.Sites.EditSiteDetails").Text;
+    //tour step
+    ViewBag.TourStep = TourStep.Site;
+    //active menu item (system name)
+    AssetForgeHtml.SetActiveMenuItemSystemName("Sites");
+}
+
+@await Html.PartialAsync("_AdminTour")
+
+<form asp-controller="Site" asp-action="Edit" method="post">
+    <div class="content-header clearfix">
+        <h1 class="float-left">
+            @T("Admin.Configuration.Sites.EditSiteDetails") - @Model.Name
+            <small>
+                <i class="fas fa-arrow-circle-left"></i>
+                <a asp-action="List">@T("Admin.Configuration.Sites.BackToList")</a>
+            </small>
+        </h1>
+        <div class="float-right">
+            <button type="submit" name="save" class="btn btn-primary">
+                <i class="far fa-save"></i>
+                @T("Admin.Common.Save")
+            </button>
+            <button type="submit" name="save-continue" class="btn btn-primary">
+                <i class="far fa-save"></i>
+                @T("Admin.Common.SaveContinue")
+            </button>
+            <span id="site-delete" class="btn btn-danger">
+                <i class="far fa-trash-alt"></i>
+                @T("Admin.Common.Delete")
+            </span>
+            @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.SiteDetailsButtons, additionalData = Model })
+        </div>
+    </div>
+    @await Html.PartialAsync("_CreateOrUpdate", Model)
+</form>
+<ix-delete-confirmation asp-model-id="@Model.Id" asp-button-id="site-delete" />

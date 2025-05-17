@@ -1,0 +1,14 @@
+@model GeneralCommonSettingsModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="AdminAreaSettings.UseRichEditorInMessageTemplates_OverrideForSite" asp-input="AdminAreaSettings.UseRichEditorInMessageTemplates" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="AdminAreaSettings.UseRichEditorInMessageTemplates" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AdminAreaSettings.UseRichEditorInMessageTemplates" />
+            <span asp-validation-for="AdminAreaSettings.UseRichEditorInMessageTemplates"></span>
+        </div>
+    </div>
+</div>

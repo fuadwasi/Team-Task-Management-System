@@ -1,0 +1,26 @@
+//this file should be in the root of the archive
+[
+  //"Must be assigned to customer role" discount rule for version 4.70
+  {
+    "Type": "Plugin",
+    "SupportedVersion": "4.70",
+    "DirectoryPath": "DiscountRules.CustomerRoles/nopCommerce 4.70/DiscountRules.CustomerRoles/",
+    "SystemName": "DiscountRequirement.MustBeAssignedToCustomerRole",
+    "SourceDirectoryPath": "DiscountRules.CustomerRoles/nopCommerce 4.70/AssetForge.Plugin.DiscountRules.CustomerRoles/"
+  },
+
+  //"Has one product" discount rule for version 4.70
+  {
+    "Type": "Plugin",
+    "SupportedVersion": "4.70",
+    "DirectoryPath": "DiscountRules.HasOneProduct/",
+    "SystemName": "DiscountRequirement.HasOneProduct"
+  },
+
+  //"Default clean" theme for version 4.70
+  {
+    "Type": "Theme",
+    "SupportedVersion": "4.70",
+    "DirectoryPath": "DefaultClean/"
+  }
+]

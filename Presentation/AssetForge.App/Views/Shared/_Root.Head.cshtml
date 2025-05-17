@@ -1,0 +1,70 @@
+﻿@using AssetForge.Core.Domain.Common
+@inject CommonSettings commonSettings
+
+@{
+
+    // AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/swiper/swiper-bundle.min.js");
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.countryselect.js");
+    // AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.ajaxcart.js");
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/public.common.js");
+
+    if (commonSettings.JqueryMigrateScriptLoggingActive)
+    {
+        AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-migrate/jquery-migrate.js");
+    }
+    else
+    {
+        AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-migrate/jquery-migrate.min.js");
+    }
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-ui-dist/jquery-ui.min.js");
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js");
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery-validation/jquery.validate.min.js");
+    AssetForgeHtml.AppendScriptParts(ResourceLocation.Footer, "~/lib_npm/jquery/jquery.min.js");
+    var title = await AssetForgeHtml.GenerateTitleAsync();
+    var description = await @AssetForgeHtml.GenerateMetaDescriptionAsync();
+    var keywords = await AssetForgeHtml.GenerateMetaKeywordsAsync();
+}
+
+
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>@title</title>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <meta name="description" content="@description" />
+    <meta name="keywords" content="@keywords" />
+    <meta name="generator" content="ixcms" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+
+    @AssetForgeHtml.GenerateHeadCustom()
+
+    @await Html.PartialAsync("Head")
+
+    @AssetForgeHtml.GenerateCssFiles()
+
+
+    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeadHtmlTag })
+    @AssetForgeHtml.GenerateCanonicalUrls()
+    @* @await Component.InvokeAsync(typeof(NewsRssHeaderLinkViewComponent)) *@
+    @* @await Component.InvokeAsync(typeof(BlogRssHeaderLinkViewComponent)) *@
+    @*Insert favicon and app icons head code*@
+    @* @await Component.InvokeAsync(typeof(FaviconViewComponent)) *@
+    @AssetForgeHtml.GenerateScripts(ResourceLocation.Head)
+    @AssetForgeHtml.GenerateInlineScripts(ResourceLocation.Head)
+
+    @Html.Raw(commonSettings.HeaderCustomHtml)
+
+</head>
+
+<body>
+    <ix-antiforgery-token />
+    @RenderBody()
+
+    @AssetForgeHtml.GenerateScripts(ResourceLocation.Footer)
+    @AssetForgeHtml.GenerateInlineScripts(ResourceLocation.Footer)
+
+    @Html.Raw(commonSettings.FooterCustomHtml)
+</body>
+</html>

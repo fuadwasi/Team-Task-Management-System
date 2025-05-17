@@ -1,0 +1,34 @@
+﻿@model CustomerModel
+
+<div asp-validation-summary="All"></div>
+<input asp-for="Id" type="hidden" />
+
+@{
+    const string hideInfoBlockAttributeName = "CustomerPage.HideInfoBlock";
+    var customer = await workContext.GetCurrentCustomerAsync();
+    var hideInfoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideInfoBlockAttributeName);
+
+    const string hideActivityLogBlockAttributeName = "CustomerPage.HideActivityLogBlock";
+    var hideActivityLogBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideActivityLogBlockAttributeName, defaultValue: true);
+
+    const string hideImpersonateBlockAttributeName = "CustomerPage.HideImpersonateBlock";
+    var hideImpersonateBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideImpersonateBlockAttributeName, defaultValue: true);
+
+}
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <ix-cards id="customer-cards">
+                <ix-card asp-name="customer-info" asp-icon="fas fa-info" asp-title="@T("Admin.Customers.Customers.Info")" asp-hide-block-attribute-name="@hideInfoBlockAttributeName" asp-hide="@hideInfoBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.Info", Model)</ix-card>
+                @if (Model.Id > 0)
+                {                    
+                    <ix-card asp-name="customer-activitylog" asp-icon="fas fa-list-alt" asp-title="@T("Admin.Customers.Customers.ActivityLog")" asp-hide-block-attribute-name="@hideActivityLogBlockAttributeName" asp-hide="@hideActivityLogBlock" asp-advanced="true">@await Html.PartialAsync("_CreateOrUpdate.ActivityLog", Model)</ix-card>
+                    @* <ix-card asp-name="customer-impersonate" asp-icon="fas fa-shopping-basket" asp-title="@T("Admin.Customers.Customers.Impersonate")" asp-hide-block-attribute-name="@hideImpersonateBlockAttributeName" asp-hide="@hideImpersonateBlock" asp-advanced="true">@await Html.PartialAsync("_CreateOrUpdate.Impersonate", Model)</ix-card> *@
+                }
+
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.CustomerDetailsBlock, additionalData = Model })
+            </ix-cards>
+        </div>
+    </div>
+</section>

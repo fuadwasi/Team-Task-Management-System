@@ -1,0 +1,31 @@
+﻿@inherits AssetForge.Web.Framework.Mvc.Razor.RazorPage<TModel>
+
+@inject IAssetForgeHtmlHelper AssetForgeHtml
+
+
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@*we remove the default InputTagHelper to prevent the checkbox duplicating: https://stackoverflow.com/questions/42544961/asp-net-core-custom-input-tag-helper-rendering-duplicate-checkboxes*@
+@removeTagHelper Microsoft.AspNetCore.Mvc.TagHelpers.InputTagHelper, Microsoft.AspNetCore.Mvc.TagHelpers
+@addTagHelper *, AssetForge.Web.Framework
+
+@using System.Globalization;
+@using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@using Microsoft.Extensions.Primitives
+@using AssetForge.Web.Components
+@using AssetForge.Web.Framework
+@using AssetForge.Web.Framework.Events
+@using AssetForge.Web.Framework.Extensions
+@using AssetForge.Web.Framework.Infrastructure
+@using AssetForge.Web.Framework.Models
+@using AssetForge.Web.Framework.Models.Cms
+@using AssetForge.Web.Framework.Mvc.Routing
+@using AssetForge.Web.Framework.Security.Captcha
+@using AssetForge.Web.Framework.Security.Honeypot
+@using AssetForge.Web.Framework.Themes
+@using AssetForge.Web.Framework.UI
+@using AssetForge.Web.Framework.TagHelpers.Shared
+@using AssetForge.App.Components
+@using AssetForge.App.Extensions
+@using AssetForge.App.Models.Common
+@using AssetForge.App.Models.Customer

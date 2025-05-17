@@ -1,0 +1,65 @@
+@model SiteSearchModel
+
+@{
+    //page title
+    ViewBag.PageTitle = T("Admin.Configuration.Sites").Text;
+    //active menu item (system name)
+    AssetForgeHtml.SetActiveMenuItemSystemName("Sites");
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        @T("Admin.Configuration.Sites")
+    </h1>
+    <div class="float-right">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus-square"></i>
+            @T("Admin.Common.AddNew")
+        </a>
+        @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.SiteListButtons, additionalData = Model })
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+    <div class="form-horizontal">
+        <div class="cards-group">
+            <div class="card card-default">
+                <div class="card-body">
+
+                    @await Html.PartialAsync("Table", new DataTablesModel
+                    {
+                        Name = "sites-grid",
+                        UrlRead = new DataUrl("List", "Site", null),
+                        Length = Model.PageSize,
+                        LengthMenu = Model.AvailablePageSizes,
+                        ColumnCollection = new List<ColumnProperty>
+                        {
+                            new ColumnProperty(nameof(SiteModel.Name))
+                            {
+                                Title = T("Admin.Configuration.Sites.Fields.Name").Text
+                            },
+                            new ColumnProperty(nameof(SiteModel.Url))
+                            {
+                                Title = T("Admin.Configuration.Sites.Fields.Url").Text
+                            },
+                            new ColumnProperty(nameof(SiteModel.DisplayOrder))
+                            {
+                                Title = T("Admin.Configuration.Sites.Fields.DisplayOrder").Text,
+                                ClassName =  AssetForgeColumnClassDefaults.CenterAll
+                            },
+                            new ColumnProperty(nameof(SiteModel.Id))
+                            {
+                                Title = T("Admin.Common.Edit").Text,
+                                Width = "100",
+                                ClassName =  AssetForgeColumnClassDefaults.Button,
+                                Render = new RenderButtonEdit(new DataUrl("Edit"))
+                            }
+                        }
+                    })
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>

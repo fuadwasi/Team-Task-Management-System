@@ -1,0 +1,57 @@
+@model GeneralCommonSettingsModel
+
+<div class="card-body">
+    @(Html.Raw(string.Format(T("Admin.Configuration.Settings.GeneralCommon.Sitemap.Instructions").Text, Url.Action("AllSettings", "Setting", new { settingName = "sitemapxml" }))))
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="SitemapSettings.SitemapEnabled_OverrideForSite" asp-input="SitemapSettings.SitemapEnabled" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="SitemapSettings.SitemapEnabled" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="SitemapSettings.SitemapEnabled" />
+            <span asp-validation-for="SitemapSettings.SitemapEnabled"></span>
+        </div>
+    </div>
+    <ix-nested-setting asp-for="SitemapSettings.SitemapEnabled">
+        <div class="form-group row advanced-setting">
+            <div class="col-md-3">
+                <ix-override-site-checkbox asp-for="SitemapSettings.SitemapPageSize_OverrideForSite" asp-input="SitemapSettings.SitemapPageSize" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+                <ix-label asp-for="SitemapSettings.SitemapPageSize" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="SitemapSettings.SitemapPageSize" />
+                <span asp-validation-for="SitemapSettings.SitemapPageSize"></span>
+            </div>
+        </div>
+        <div class="form-group row advanced-setting">
+            <div class="col-md-3">
+                <ix-override-site-checkbox asp-for="SitemapSettings.SitemapIncludePages_OverrideForSite" asp-input="SitemapSettings.SitemapIncludePages" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+                <ix-label asp-for="SitemapSettings.SitemapIncludePages" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="SitemapSettings.SitemapIncludePages" />
+                <span asp-validation-for="SitemapSettings.SitemapIncludePages"></span>
+            </div>
+        </div>
+        <div class="form-group row advanced-setting">
+            <div class="col-md-3">
+                <ix-override-site-checkbox asp-for="SitemapSettings.SitemapIncludeBlogPosts_OverrideForSite" asp-input="SitemapSettings.SitemapIncludeBlogPosts" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+                <ix-label asp-for="SitemapSettings.SitemapIncludeBlogPosts" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="SitemapSettings.SitemapIncludeBlogPosts" />
+                <span asp-validation-for="SitemapSettings.SitemapIncludeBlogPosts"></span>
+            </div>
+        </div>
+        <div class="form-group row advanced-setting">
+            <div class="col-md-3">
+                <ix-override-site-checkbox asp-for="SitemapSettings.SitemapIncludeNews_OverrideForSite" asp-input="SitemapSettings.SitemapIncludeNews" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+                <ix-label asp-for="SitemapSettings.SitemapIncludeNews" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="SitemapSettings.SitemapIncludeNews" />
+                <span asp-validation-for="SitemapSettings.SitemapIncludeNews"></span>
+            </div>
+        </div>
+    </ix-nested-setting>
+</div>

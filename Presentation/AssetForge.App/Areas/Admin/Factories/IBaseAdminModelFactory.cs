@@ -1,0 +1,147 @@
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
+
+namespace AssetForge.App.Areas.Admin.Factories;
+
+/// <summary>
+/// Represents the base model factory that implements a most common admin model factories methods
+/// </summary>
+public partial interface IBaseAdminModelFactory
+{
+    /// <summary>
+    /// Prepare available activity log types
+    /// </summary>
+    /// <param name="items">Activity log type items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareActivityLogTypesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    ///// <summary>
+    ///// Prepare available order statuses
+    ///// </summary>
+    ///// <param name="items">Order status items</param>
+    ///// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    ///// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    ///// <returns>A task that represents the asynchronous operation</returns>
+    //Task PrepareOrderStatusesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    ///// <summary>
+    ///// Prepare available payment statuses
+    ///// </summary>
+    ///// <param name="items">Payment status items</param>
+    ///// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    ///// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    ///// <returns>A task that represents the asynchronous operation</returns>
+    //Task PreparePaymentStatusesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    ///// <summary>
+    ///// Prepare available shipping statuses
+    ///// </summary>
+    ///// <param name="items">Shipping status items</param>
+    ///// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    ///// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    ///// <returns>A task that represents the asynchronous operation</returns>
+    //Task PrepareShippingStatusesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available countries
+    /// </summary>
+    /// <param name="items">Country items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareCountriesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available states and provinces
+    /// </summary>
+    /// <param name="items">State and province items</param>
+    /// <param name="countryId">Country identifier; pass null to don't load states and provinces</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareStatesAndProvincesAsync(IList<SelectListItem> items, int? countryId,
+        bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available languages
+    /// </summary>
+    /// <param name="items">Language items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareLanguagesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available sites
+    /// </summary>
+    /// <param name="items">Site items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareSitesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available customer roles
+    /// </summary>
+    /// <param name="items">Customer role items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareCustomerRolesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available email accounts
+    /// </summary>
+    /// <param name="items">Email account items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareEmailAccountsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available time zones
+    /// </summary>
+    /// <param name="items">Time zone items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareTimeZonesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available log levels
+    /// </summary>
+    /// <param name="items">Log level items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareLogLevelsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available load plugin modes
+    /// </summary>
+    /// <param name="items">Load plugin mode items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PrepareLoadPluginModesAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    /// <summary>
+    /// Prepare available plugin groups
+    /// </summary>
+    /// <param name="items">Plugin group items</param>
+    /// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    /// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task PreparePluginGroupsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+    ///// <summary>
+    ///// Prepare available specification attribute groups
+    ///// </summary>
+    ///// <param name="items">Specification attributes</param>
+    ///// <param name="withSpecialDefaultItem">Whether to insert the first special item for the default value</param>
+    ///// <param name="defaultItemText">Default item text; pass null to use default value of the default item text</param>
+    ///// <returns>A task that represents the asynchronous operation</returns>
+    //Task PrepareSpecificationAttributeGroupsAsync(IList<SelectListItem> items, bool withSpecialDefaultItem = true, string defaultItemText = null);
+
+}

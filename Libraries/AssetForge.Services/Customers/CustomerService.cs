@@ -1,0 +1,1404 @@
+﻿using AssetForge.Core;
+using AssetForge.Core.Caching;
+using AssetForge.Core.Domain.Common;
+using AssetForge.Core.Domain.Customers;
+using AssetForge.Core.Events;
+using AssetForge.Core.Infrastructure;
+using AssetForge.Data;
+using AssetForge.Services.Common;
+using AssetForge.Services.Localization;
+using System.Xml;
+
+namespace AssetForge.Services.Customers;
+
+/// <summary>
+/// Customer service
+/// </summary>
+public partial class CustomerService : ICustomerService
+{
+    #region Fields
+
+    protected readonly CustomerSettings _customerSettings;
+    protected readonly IEventPublisher _eventPublisher;
+    protected readonly IGenericAttributeService _genericAttributeService;
+    protected readonly IDataProvider _dataProvider;
+    protected readonly IRepository<Address> _customerAddressRepository;
+    protected readonly IRepository<Customer> _customerRepository;
+    protected readonly IRepository<CustomerAddressMapping> _customerAddressMappingRepository;
+    protected readonly IRepository<CustomerCustomerRoleMapping> _customerCustomerRoleMappingRepository;
+    protected readonly IRepository<CustomerPassword> _customerPasswordRepository;
+    protected readonly IRepository<CustomerRole> _customerRoleRepository;
+    protected readonly IRepository<GenericAttribute> _gaRepository;
+    protected readonly IShortTermCacheManager _shortTermCacheManager;
+    protected readonly IStaticCacheManager _staticCacheManager;
+    protected readonly ISiteContext _siteContext;
+
+    #endregion
+
+    #region Ctor
+
+    public CustomerService(CustomerSettings customerSettings,
+        IEventPublisher eventPublisher,
+        IGenericAttributeService genericAttributeService,
+        IDataProvider dataProvider,
+        IRepository<Address> customerAddressRepository,
+        IRepository<Customer> customerRepository,
+        IRepository<CustomerAddressMapping> customerAddressMappingRepository,
+        IRepository<CustomerCustomerRoleMapping> customerCustomerRoleMappingRepository,
+        IRepository<CustomerPassword> customerPasswordRepository,
+        IRepository<CustomerRole> customerRoleRepository,
+        IRepository<GenericAttribute> gaRepository,
+        IShortTermCacheManager shortTermCacheManager,
+        IStaticCacheManager staticCacheManager,
+        ISiteContext siteContext)
+    {
+        _customerSettings = customerSettings;
+        _eventPublisher = eventPublisher;
+        _genericAttributeService = genericAttributeService;
+        _dataProvider = dataProvider;
+        _customerAddressRepository = customerAddressRepository;
+        _customerRepository = customerRepository;
+        _customerAddressMappingRepository = customerAddressMappingRepository;
+        _customerCustomerRoleMappingRepository = customerCustomerRoleMappingRepository;
+        _customerPasswordRepository = customerPasswordRepository;
+        _customerRoleRepository = customerRoleRepository;
+        _gaRepository = gaRepository;
+        _shortTermCacheManager = shortTermCacheManager;
+        _staticCacheManager = staticCacheManager;
+        _siteContext = siteContext;
+    }
+
+    #endregion
+
+    #region Utilities
+
+    /// <summary>
+    /// Gets a dictionary of all customer roles mapped by ID.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation and contains a dictionary of all customer roles mapped by ID.
+    /// </returns>
+    protected virtual async Task<IDictionary<int, CustomerRole>> GetAllCustomerRolesDictionaryAsync()
+    {
+        return await _staticCacheManager.GetAsync(
+            _staticCacheManager.PrepareKeyForDefaultCache(EntityCacheDefaults<CustomerRole>.AllCacheKey),
+            async () => await _customerRoleRepository.Table.ToDictionaryAsync(cr => cr.Id));
+    }
+
+    #endregion
+
+    #region Methods
+
+    #region Customers
+
+    /// <summary>
+    /// Gets all customers
+    /// </summary>
+    /// <param name="createdFromUtc">Created date from (UTC); null to load all records</param>
+    /// <param name="createdToUtc">Created date to (UTC); null to load all records</param>
+    /// <param name="lastActivityFromUtc">Last activity date from (UTC); null to load all records</param>
+    /// <param name="lastActivityToUtc">Last activity date to (UTC); null to load all records</param>
+    /// <param name="affiliateId">Affiliate identifier</param>
+    /// <param name="vendorId">Vendor identifier</param>
+    /// <param name="customerRoleIds">A list of customer role identifiers to filter by (at least one match); pass null or empty list in order to load all customers; </param>
+    /// <param name="email">Email; null to load all customers</param>
+    /// <param name="username">Username; null to load all customers</param>
+    /// <param name="firstName">First name; null to load all customers</param>
+    /// <param name="lastName">Last name; null to load all customers</param>
+    /// <param name="dayOfBirth">Day of birth; 0 to load all customers</param>
+    /// <param name="monthOfBirth">Month of birth; 0 to load all customers</param>
+    /// <param name="company">Company; null to load all customers</param>
+    /// <param name="phone">Phone; null to load all customers</param>
+    /// <param name="zipPostalCode">Phone; null to load all customers</param>
+    /// <param name="ipAddress">IP address; null to load all customers</param>
+    /// <param name="pageIndex">Page index</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="getOnlyTotalCount">A value in indicating whether you want to load only total number of records. Set to "true" if you don't want to load data from database</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customers
+    /// </returns>
+    public virtual async Task<IPagedList<Customer>> GetAllCustomersAsync(DateTime? createdFromUtc = null, DateTime? createdToUtc = null,
+        DateTime? lastActivityFromUtc = null, DateTime? lastActivityToUtc = null, int[] customerRoleIds = null,
+        string email = null, string username = null, string firstName = null, string lastName = null,
+        int dayOfBirth = 0, int monthOfBirth = 0,
+        string company = null, string phone = null, string zipPostalCode = null, string ipAddress = null,
+        int pageIndex = 0, int pageSize = int.MaxValue, bool getOnlyTotalCount = false)
+    {
+        var customers = await _customerRepository.GetAllPagedAsync(query =>
+        {
+            if (createdFromUtc.HasValue)
+                query = query.Where(c => createdFromUtc.Value <= c.CreatedOnUtc);
+            if (createdToUtc.HasValue)
+                query = query.Where(c => createdToUtc.Value >= c.CreatedOnUtc);
+            if (lastActivityFromUtc.HasValue)
+                query = query.Where(c => lastActivityFromUtc.Value <= c.LastActivityDateUtc);
+            if (lastActivityToUtc.HasValue)
+                query = query.Where(c => lastActivityToUtc.Value >= c.LastActivityDateUtc);
+
+            query = query.Where(c => !c.Deleted);
+
+            if (customerRoleIds != null && customerRoleIds.Length > 0)
+            {
+                query = query.Join(_customerCustomerRoleMappingRepository.Table, x => x.Id, y => y.CustomerId,
+                        (x, y) => new { Customer = x, Mapping = y })
+                    .Where(z => customerRoleIds.Contains(z.Mapping.CustomerRoleId))
+                    .Select(z => z.Customer)
+                    .Distinct();
+            }
+
+            if (!string.IsNullOrWhiteSpace(email))
+                query = query.Where(c => c.Email.Contains(email));
+            if (!string.IsNullOrWhiteSpace(username))
+                query = query.Where(c => c.Username.Contains(username));
+            if (!string.IsNullOrWhiteSpace(firstName))
+                query = query.Where(c => c.FirstName.Contains(firstName));
+            if (!string.IsNullOrWhiteSpace(lastName))
+                query = query.Where(c => c.LastName.Contains(lastName));
+            if (!string.IsNullOrWhiteSpace(company))
+                query = query.Where(c => c.Company.Contains(company));
+            if (!string.IsNullOrWhiteSpace(phone))
+                query = query.Where(c => c.Phone.Contains(phone));
+            if (!string.IsNullOrWhiteSpace(zipPostalCode))
+                query = query.Where(c => c.ZipPostalCode.Contains(zipPostalCode));
+
+            if (dayOfBirth > 0 && monthOfBirth > 0)
+                query = query.Where(c => c.DateOfBirth.HasValue && c.DateOfBirth.Value.Day == dayOfBirth &&
+                                         c.DateOfBirth.Value.Month == monthOfBirth);
+            else if (dayOfBirth > 0)
+                query = query.Where(c => c.DateOfBirth.HasValue && c.DateOfBirth.Value.Day == dayOfBirth);
+            else if (monthOfBirth > 0)
+                query = query.Where(c => c.DateOfBirth.HasValue && c.DateOfBirth.Value.Month == monthOfBirth);
+
+            //search by IpAddress
+            if (!string.IsNullOrWhiteSpace(ipAddress) && CommonHelper.IsValidIpAddress(ipAddress))
+            {
+                query = query.Where(w => w.LastIpAddress == ipAddress);
+            }
+
+            query = query.OrderByDescending(c => c.CreatedOnUtc);
+
+            return query;
+        }, pageIndex, pageSize, getOnlyTotalCount);
+
+        return customers;
+    }
+
+    /// <summary>
+    /// Gets online customers
+    /// </summary>
+    /// <param name="lastActivityFromUtc">Customer last activity date (from)</param>
+    /// <param name="customerRoleIds">A list of customer role identifiers to filter by (at least one match); pass null or empty list in order to load all customers; </param>
+    /// <param name="pageIndex">Page index</param>
+    /// <param name="pageSize">Page size</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customers
+    /// </returns>
+    public virtual async Task<IPagedList<Customer>> GetOnlineCustomersAsync(DateTime lastActivityFromUtc,
+        int[] customerRoleIds, int pageIndex = 0, int pageSize = int.MaxValue)
+    {
+        var query = _customerRepository.Table;
+        query = query.Where(c => lastActivityFromUtc <= c.LastActivityDateUtc);
+        query = query.Where(c => !c.Deleted);
+
+        if (customerRoleIds != null && customerRoleIds.Length > 0)
+            query = query.Where(c => _customerCustomerRoleMappingRepository.Table.Any(ccrm => ccrm.CustomerId == c.Id && customerRoleIds.Contains(ccrm.CustomerRoleId)));
+
+        query = query.OrderByDescending(c => c.LastActivityDateUtc);
+        var customers = await query.ToPagedListAsync(pageIndex, pageSize);
+
+        return customers;
+    }
+    /// <summary>
+    /// Delete a customer
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task DeleteCustomerAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        if (customer.IsSystemAccount)
+            throw new Core.AssetForgeException($"System customer account ({customer.SystemName}) could not be deleted");
+
+        customer.Deleted = true;
+
+        if (_customerSettings.SuffixDeletedCustomers)
+        {
+            if (!string.IsNullOrEmpty(customer.Email))
+                customer.Email += "-DELETED";
+            if (!string.IsNullOrEmpty(customer.Username))
+                customer.Username += "-DELETED";
+        }
+
+        await _customerRepository.UpdateAsync(customer, false);
+        await _customerRepository.DeleteAsync(customer);
+    }
+
+    /// <summary>
+    /// Gets a customer
+    /// </summary>
+    /// <param name="customerId">Customer identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains a customer
+    /// </returns>
+    public virtual async Task<Customer> GetCustomerByIdAsync(int customerId)
+    {
+        return await _customerRepository.GetByIdAsync(customerId, cache => default, useShortTermCache: true);
+    }
+
+    /// <summary>
+    /// Get customers by identifiers
+    /// </summary>
+    /// <param name="customerIds">Customer identifiers</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customers
+    /// </returns>
+    public virtual async Task<IList<Customer>> GetCustomersByIdsAsync(int[] customerIds)
+    {
+        return await _customerRepository.GetByIdsAsync(customerIds, includeDeleted: false);
+    }
+
+    /// <summary>
+    /// Get customers by guids
+    /// </summary>
+    /// <param name="customerGuids">Customer guids</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customers
+    /// </returns>
+    public virtual async Task<IList<Customer>> GetCustomersByGuidsAsync(Guid[] customerGuids)
+    {
+        if (customerGuids == null)
+            return null;
+
+        var query = from c in _customerRepository.Table
+                    where customerGuids.Contains(c.CustomerGuid)
+                    select c;
+        var customers = await query.ToListAsync();
+
+        return customers;
+    }
+
+    /// <summary>
+    /// Gets a customer by GUID
+    /// </summary>
+    /// <param name="customerGuid">Customer GUID</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains a customer
+    /// </returns>
+    public virtual async Task<Customer> GetCustomerByGuidAsync(Guid customerGuid)
+    {
+        if (customerGuid == Guid.Empty)
+            return null;
+
+        var query = from c in _customerRepository.Table
+                    where c.CustomerGuid == customerGuid
+                    orderby c.Id
+                    select c;
+
+        return await _shortTermCacheManager.GetAsync(async () => await query.FirstOrDefaultAsync(), AssetForgeCustomerServicesDefaults.CustomerByGuidCacheKey, customerGuid);
+    }
+
+    /// <summary>
+    /// Get customer by email
+    /// </summary>
+    /// <param name="email">Email</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer
+    /// </returns>
+    public virtual async Task<Customer> GetCustomerByEmailAsync(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        var query = from c in _customerRepository.Table
+                    orderby c.Id
+                    where c.Email == email
+                    select c;
+        var customer = await query.FirstOrDefaultAsync();
+
+        return customer;
+    }
+
+    /// <summary>
+    /// Get customer by system name
+    /// </summary>
+    /// <param name="systemName">System name</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer
+    /// </returns>
+    public virtual async Task<Customer> GetCustomerBySystemNameAsync(string systemName)
+    {
+        if (string.IsNullOrWhiteSpace(systemName))
+            return null;
+
+        var query = from c in _customerRepository.Table
+                    orderby c.Id
+                    where c.SystemName == systemName
+                    select c;
+
+        var customer = await _shortTermCacheManager.GetAsync(async () => await query.FirstOrDefaultAsync(), AssetForgeCustomerServicesDefaults.CustomerBySystemNameCacheKey, systemName);
+
+        return customer;
+    }
+
+    /// <summary>
+    /// Gets built-in system record used for background tasks
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains a customer object
+    /// </returns>
+    public virtual async Task<Customer> GetOrCreateBackgroundTaskUserAsync()
+    {
+        var backgroundTaskUser = await GetCustomerBySystemNameAsync(CustomerDefaults.BackgroundTaskCustomerName);
+
+        if (backgroundTaskUser is null)
+        {
+            var site = await _siteContext.GetCurrentSiteAsync();
+            //If for any reason the system user isn't in the database, then we add it
+            backgroundTaskUser = new Customer
+            {
+                Email = "builtin@background-task-record.com",
+                CustomerGuid = Guid.NewGuid(),
+                AdminComment = "Built-in system record used for background tasks.",
+                Active = true,
+                IsSystemAccount = true,
+                SystemName = CustomerDefaults.BackgroundTaskCustomerName,
+                CreatedOnUtc = DateTime.UtcNow,
+                LastActivityDateUtc = DateTime.UtcNow,
+                RegisteredInSiteId = site.Id
+            };
+
+            await InsertCustomerAsync(backgroundTaskUser);
+
+            var guestRole = await GetCustomerRoleBySystemNameAsync(CustomerDefaults.GuestsRoleName) ?? throw new Core.AssetForgeException("'Guests' role could not be loaded");
+
+            await AddCustomerRoleMappingAsync(new CustomerCustomerRoleMapping { CustomerRoleId = guestRole.Id, CustomerId = backgroundTaskUser.Id });
+        }
+
+        return backgroundTaskUser;
+    }
+
+    /// <summary>
+    /// Gets built-in system guest record used for requests from search engines
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains a customer object
+    /// </returns>
+    public virtual async Task<Customer> GetOrCreateSearchEngineUserAsync()
+    {
+        var searchEngineUser = await GetCustomerBySystemNameAsync(CustomerDefaults.SearchEngineCustomerName);
+
+        if (searchEngineUser is null)
+        {
+            var site = await _siteContext.GetCurrentSiteAsync();
+            //If for any reason the system user isn't in the database, then we add it
+            searchEngineUser = new Customer
+            {
+                Email = "builtin@search_engine_record.com",
+                CustomerGuid = Guid.NewGuid(),
+                AdminComment = "Built-in system guest record used for requests from search engines.",
+                Active = true,
+                IsSystemAccount = true,
+                SystemName = CustomerDefaults.SearchEngineCustomerName,
+                CreatedOnUtc = DateTime.UtcNow,
+                LastActivityDateUtc = DateTime.UtcNow,
+                RegisteredInSiteId = site.Id
+            };
+
+            await InsertCustomerAsync(searchEngineUser);
+
+            var guestRole = await GetCustomerRoleBySystemNameAsync(CustomerDefaults.GuestsRoleName) ?? throw new Core.AssetForgeException("'Guests' role could not be loaded");
+
+            await AddCustomerRoleMappingAsync(new CustomerCustomerRoleMapping { CustomerRoleId = guestRole.Id, CustomerId = searchEngineUser.Id });
+        }
+
+        return searchEngineUser;
+    }
+
+    /// <summary>
+    /// Get customer by username
+    /// </summary>
+    /// <param name="username">Username</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer
+    /// </returns>
+    public virtual async Task<Customer> GetCustomerByUsernameAsync(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return null;
+
+        var query = from c in _customerRepository.Table
+                    orderby c.Id
+                    where c.Username == username
+                    select c;
+        var customer = await query.FirstOrDefaultAsync();
+
+        return customer;
+    }
+
+    /// <summary>
+    /// Insert a guest customer
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer
+    /// </returns>
+    public virtual async Task<Customer> InsertGuestCustomerAsync()
+    {
+        var customer = new Customer
+        {
+            CustomerGuid = Guid.NewGuid(),
+            Active = true,
+            CreatedOnUtc = DateTime.UtcNow,
+            LastActivityDateUtc = DateTime.UtcNow
+        };
+
+        //add to 'Guests' role
+        var guestRole = await GetCustomerRoleBySystemNameAsync(CustomerDefaults.GuestsRoleName) ?? throw new Core.AssetForgeException("'Guests' role could not be loaded");
+
+        await _customerRepository.InsertAsync(customer);
+
+        await AddCustomerRoleMappingAsync(new CustomerCustomerRoleMapping { CustomerId = customer.Id, CustomerRoleId = guestRole.Id });
+
+        return customer;
+    }
+
+    /// <summary>
+    /// Insert a customer
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task InsertCustomerAsync(Customer customer)
+    {
+        await _customerRepository.InsertAsync(customer);
+    }
+
+    /// <summary>
+    /// Updates the customer
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task UpdateCustomerAsync(Customer customer)
+    {
+        await _customerRepository.UpdateAsync(customer);
+    }
+
+    /// <summary>
+    /// Delete guest customer records
+    /// </summary>
+    /// <param name="createdFromUtc">Created date from (UTC); null to load all records</param>
+    /// <param name="createdToUtc">Created date to (UTC); null to load all records</param>
+    /// <param name="onlyWithoutShoppingCart">A value indicating whether to delete customers only without shopping cart</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the number of deleted customers
+    /// </returns>
+    public virtual async Task<int> DeleteGuestCustomersAsync(DateTime? createdFromUtc, DateTime? createdToUtc, bool onlyWithoutShoppingCart)
+    {
+        var guestRole = await GetCustomerRoleBySystemNameAsync(CustomerDefaults.GuestsRoleName);
+
+        var allGuestCustomers = from guest in _customerRepository.Table
+                                join ccm in _customerCustomerRoleMappingRepository.Table on guest.Id equals ccm.CustomerId
+                                where ccm.CustomerRoleId == guestRole.Id
+                                select guest;
+
+        var guestsToDelete = from guest in _customerRepository.Table
+                             join g in allGuestCustomers on guest.Id equals g.Id
+                             where (!onlyWithoutShoppingCart) &&
+                                   !guest.IsSystemAccount &&
+                                   (createdFromUtc == null || guest.CreatedOnUtc > createdFromUtc) &&
+                                   (createdToUtc == null || guest.CreatedOnUtc < createdToUtc)
+                             select new { CustomerId = guest.Id };
+
+        await using var tmpGuests = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsToDelete", guestsToDelete);
+        await using var tmpAddresses = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsAddressesToDelete",
+            _customerAddressMappingRepository.Table
+                .Where(ca => tmpGuests.Any(c => c.CustomerId == ca.CustomerId))
+                .Select(ca => new { AddressId = ca.AddressId }));
+
+        //delete guests
+        var totalRecordsDeleted = await _customerRepository.DeleteAsync(c => tmpGuests.Any(tmp => tmp.CustomerId == c.Id));
+
+        //delete attributes
+        await _gaRepository.DeleteAsync(ga => tmpGuests.Any(c => c.CustomerId == ga.EntityId) && ga.KeyGroup == nameof(Customer));
+
+        //delete m -> m addresses
+        await _customerAddressRepository.DeleteAsync(a => tmpAddresses.Any(tmp => tmp.AddressId == a.Id));
+
+        return totalRecordsDeleted;
+    }
+
+    /// <summary>
+    /// Get full name
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer full name
+    /// </returns>
+    public virtual async Task<string> GetCustomerFullNameAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var firstName = customer.FirstName;
+        var lastName = customer.LastName;
+
+        var fullName = string.Empty;
+        if (!string.IsNullOrWhiteSpace(firstName) && !string.IsNullOrWhiteSpace(lastName))
+        {
+            //do not inject ILocalizationService via constructor because it'll cause circular references
+            var format = await EngineContext.Current.Resolve<ILocalizationService>().GetResourceAsync("Customer.FullNameFormat");
+
+            fullName = string.Format(format, firstName, lastName);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(firstName))
+                fullName = firstName;
+
+            if (!string.IsNullOrWhiteSpace(lastName))
+                fullName = lastName;
+        }
+
+        return fullName;
+    }
+
+    /// <summary>
+    /// Formats the customer name
+    /// </summary>
+    /// <param name="customer">Source</param>
+    /// <param name="stripTooLong">Strip too long customer name</param>
+    /// <param name="maxLength">Maximum customer name length</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the formatted text
+    /// </returns>
+    public virtual async Task<string> FormatUsernameAsync(Customer customer, bool stripTooLong = false, int maxLength = 0)
+    {
+        if (customer == null)
+            return string.Empty;
+
+        if (await IsGuestAsync(customer))
+            //do not inject ILocalizationService via constructor because it'll cause circular references
+            return await EngineContext.Current.Resolve<ILocalizationService>().GetResourceAsync("Customer.Guest");
+
+        var result = string.Empty;
+        switch (_customerSettings.CustomerNameFormat)
+        {
+            case CustomerNameFormat.ShowEmails:
+                result = customer.Email;
+                break;
+            case CustomerNameFormat.ShowUsernames:
+                result = customer.Username;
+                break;
+            case CustomerNameFormat.ShowFullNames:
+                result = await GetCustomerFullNameAsync(customer);
+                break;
+            case CustomerNameFormat.ShowFirstName:
+                result = customer.FirstName;
+                break;
+            default:
+                break;
+        }
+
+        if (stripTooLong && maxLength > 0)
+            result = CommonHelper.EnsureMaximumLength(result, maxLength);
+
+        return result ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets coupon codes
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the coupon codes
+    /// </returns>
+    public virtual async Task<string[]> ParseAppliedDiscountCouponCodesAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.DiscountCouponCodeAttribute);
+
+        var couponCodes = new List<string>();
+        if (string.IsNullOrEmpty(existingCouponCodes))
+            return couponCodes.ToArray();
+
+        try
+        {
+            var xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(existingCouponCodes);
+
+            var nodeList1 = xmlDoc.SelectNodes(@"//DiscountCouponCodes/CouponCode");
+            foreach (XmlNode node1 in nodeList1)
+            {
+                if (node1.Attributes?["Code"] == null)
+                    continue;
+                var code = node1.Attributes["Code"].InnerText.Trim();
+                couponCodes.Add(code);
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return couponCodes.ToArray();
+    }
+
+    /// <summary>
+    /// Adds a coupon code
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="couponCode">Coupon code</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the new coupon codes document
+    /// </returns>
+    public virtual async Task ApplyDiscountCouponCodeAsync(Customer customer, string couponCode)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var result = string.Empty;
+        try
+        {
+            var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.DiscountCouponCodeAttribute);
+
+            couponCode = couponCode.Trim().ToLowerInvariant();
+
+            var xmlDoc = new XmlDocument();
+            if (string.IsNullOrEmpty(existingCouponCodes))
+            {
+                var element1 = xmlDoc.CreateElement("DiscountCouponCodes");
+                xmlDoc.AppendChild(element1);
+            }
+            else
+                xmlDoc.LoadXml(existingCouponCodes);
+
+            var rootElement = (XmlElement)xmlDoc.SelectSingleNode(@"//DiscountCouponCodes");
+
+            XmlElement gcElement = null;
+            //find existing
+            var nodeList1 = xmlDoc.SelectNodes(@"//DiscountCouponCodes/CouponCode");
+            foreach (XmlNode node1 in nodeList1)
+            {
+                if (node1.Attributes?["Code"] == null)
+                    continue;
+
+                var couponCodeAttribute = node1.Attributes["Code"].InnerText.Trim();
+
+                if (couponCodeAttribute.ToLowerInvariant() != couponCode.ToLowerInvariant())
+                    continue;
+
+                gcElement = (XmlElement)node1;
+                break;
+            }
+
+            //create new one if not found
+            if (gcElement == null)
+            {
+                gcElement = xmlDoc.CreateElement("CouponCode");
+                gcElement.SetAttribute("Code", couponCode);
+                rootElement.AppendChild(gcElement);
+            }
+
+            result = xmlDoc.OuterXml;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        //apply new value
+        await _genericAttributeService.SaveAttributeAsync(customer, CustomerDefaults.DiscountCouponCodeAttribute, result);
+    }
+
+    /// <summary>
+    /// Removes a coupon code
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="couponCode">Coupon code to remove</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the new coupon codes document
+    /// </returns>
+    public virtual async Task RemoveDiscountCouponCodeAsync(Customer customer, string couponCode)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        //get applied coupon codes
+        var existingCouponCodes = await ParseAppliedDiscountCouponCodesAsync(customer);
+
+        //clear them
+        await _genericAttributeService.SaveAttributeAsync<string>(customer, CustomerDefaults.DiscountCouponCodeAttribute, null);
+
+        //save again except removed one
+        foreach (var existingCouponCode in existingCouponCodes)
+            if (!existingCouponCode.Equals(couponCode, StringComparison.InvariantCultureIgnoreCase))
+                await ApplyDiscountCouponCodeAsync(customer, existingCouponCode);
+    }
+
+    /// <summary>
+    /// Gets coupon codes
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the coupon codes
+    /// </returns>
+    public virtual async Task<string[]> ParseAppliedGiftCardCouponCodesAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.GiftCardCouponCodesAttribute);
+
+        var couponCodes = new List<string>();
+        if (string.IsNullOrEmpty(existingCouponCodes))
+            return couponCodes.ToArray();
+
+        try
+        {
+            var xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(existingCouponCodes);
+
+            var nodeList1 = xmlDoc.SelectNodes(@"//GiftCardCouponCodes/CouponCode");
+            foreach (XmlNode node1 in nodeList1)
+            {
+                if (node1.Attributes?["Code"] == null)
+                    continue;
+
+                var code = node1.Attributes["Code"].InnerText.Trim();
+                couponCodes.Add(code);
+            }
+        }
+        catch
+        {
+            // ignored
+        }
+
+        return couponCodes.ToArray();
+    }
+
+    /// <summary>
+    /// Adds a coupon code
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="couponCode">Coupon code</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the new coupon codes document
+    /// </returns>
+    public virtual async Task ApplyGiftCardCouponCodeAsync(Customer customer, string couponCode)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var result = string.Empty;
+        try
+        {
+            var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.GiftCardCouponCodesAttribute);
+
+            couponCode = couponCode.Trim().ToLowerInvariant();
+
+            var xmlDoc = new XmlDocument();
+            if (string.IsNullOrEmpty(existingCouponCodes))
+            {
+                var element1 = xmlDoc.CreateElement("GiftCardCouponCodes");
+                xmlDoc.AppendChild(element1);
+            }
+            else
+                xmlDoc.LoadXml(existingCouponCodes);
+
+            var rootElement = (XmlElement)xmlDoc.SelectSingleNode(@"//GiftCardCouponCodes");
+
+            XmlElement gcElement = null;
+            //find existing
+            var nodeList1 = xmlDoc.SelectNodes(@"//GiftCardCouponCodes/CouponCode");
+            foreach (XmlNode node1 in nodeList1)
+            {
+                if (node1.Attributes?["Code"] == null)
+                    continue;
+
+                var couponCodeAttribute = node1.Attributes["Code"].InnerText.Trim();
+                if (couponCodeAttribute.ToLowerInvariant() != couponCode.ToLowerInvariant())
+                    continue;
+
+                gcElement = (XmlElement)node1;
+                break;
+            }
+
+            //create new one if not found
+            if (gcElement == null)
+            {
+                gcElement = xmlDoc.CreateElement("CouponCode");
+                gcElement.SetAttribute("Code", couponCode);
+                rootElement.AppendChild(gcElement);
+            }
+
+            result = xmlDoc.OuterXml;
+        }
+        catch
+        {
+            // ignored
+        }
+
+        //apply new value
+        await _genericAttributeService.SaveAttributeAsync(customer, CustomerDefaults.GiftCardCouponCodesAttribute, result);
+    }
+
+    /// <summary>
+    /// Removes a coupon code
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="couponCode">Coupon code to remove</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the new coupon codes document
+    /// </returns>
+    public virtual async Task RemoveGiftCardCouponCodeAsync(Customer customer, string couponCode)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        //get applied coupon codes
+        var existingCouponCodes = await ParseAppliedGiftCardCouponCodesAsync(customer);
+
+        //clear them
+        await _genericAttributeService.SaveAttributeAsync<string>(customer, CustomerDefaults.GiftCardCouponCodesAttribute, null);
+
+        //save again except removed one
+        foreach (var existingCouponCode in existingCouponCodes)
+            if (!existingCouponCode.Equals(couponCode, StringComparison.InvariantCultureIgnoreCase))
+                await ApplyGiftCardCouponCodeAsync(customer, existingCouponCode);
+    }
+
+    /// <summary>
+    /// Returns a list of guids of not existing customers
+    /// </summary>
+    /// <param name="guids">The guids of the customers to check</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the list of guids not existing customers
+    /// </returns>
+    public virtual async Task<Guid[]> GetNotExistingCustomersAsync(Guid[] guids)
+    {
+        ArgumentNullException.ThrowIfNull(guids);
+
+        var query = _customerRepository.Table;
+        var queryFilter = guids.Distinct().ToArray();
+        //filtering by guid
+        var filter = await query.Select(c => c.CustomerGuid)
+            .Where(c => queryFilter.Contains(c))
+            .ToListAsync();
+
+        return queryFilter.Except(filter).ToArray();
+    }
+
+    #endregion
+
+    #region Customer roles
+
+    /// <summary>
+    /// Add a customer-customer role mapping
+    /// </summary>
+    /// <param name="roleMapping">Customer-customer role mapping</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public async Task AddCustomerRoleMappingAsync(CustomerCustomerRoleMapping roleMapping)
+    {
+        await _customerCustomerRoleMappingRepository.InsertAsync(roleMapping);
+    }
+
+    /// <summary>
+    /// Remove a customer-customer role mapping
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="role">Customer role</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public async Task RemoveCustomerRoleMappingAsync(Customer customer, CustomerRole role)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        ArgumentNullException.ThrowIfNull(role);
+
+        var mapping = await _customerCustomerRoleMappingRepository.Table
+            .SingleOrDefaultAsync(ccrm => ccrm.CustomerId == customer.Id && ccrm.CustomerRoleId == role.Id);
+
+        if (mapping != null)
+            await _customerCustomerRoleMappingRepository.DeleteAsync(mapping);
+    }
+
+    /// <summary>
+    /// Delete a customer role
+    /// </summary>
+    /// <param name="customerRole">Customer role</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task DeleteCustomerRoleAsync(CustomerRole customerRole)
+    {
+        ArgumentNullException.ThrowIfNull(customerRole);
+
+        if (customerRole.IsSystemRole)
+            throw new Core.AssetForgeException("System role could not be deleted");
+
+        await _customerRoleRepository.DeleteAsync(customerRole);
+    }
+
+    /// <summary>
+    /// Gets a customer role
+    /// </summary>
+    /// <param name="customerRoleId">Customer role identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer role
+    /// </returns>
+    public virtual async Task<CustomerRole> GetCustomerRoleByIdAsync(int customerRoleId)
+    {
+        var allRolesById = await GetAllCustomerRolesDictionaryAsync();
+
+        return allRolesById.TryGetValue(customerRoleId, out var role) ? role : null;
+    }
+
+    /// <summary>
+    /// Gets a customer role
+    /// </summary>
+    /// <param name="systemName">Customer role system name</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer role
+    /// </returns>
+    public virtual async Task<CustomerRole> GetCustomerRoleBySystemNameAsync(string systemName)
+    {
+        if (string.IsNullOrWhiteSpace(systemName))
+            return null;
+
+        var key = _staticCacheManager.PrepareKeyForDefaultCache(AssetForgeCustomerServicesDefaults.CustomerRolesBySystemNameCacheKey, systemName);
+
+        var query = from cr in _customerRoleRepository.Table
+                    orderby cr.Id
+                    where cr.SystemName == systemName
+                    select cr;
+
+        var customerRole = await _staticCacheManager.GetAsync(key, async () => await query.FirstOrDefaultAsync());
+
+        return customerRole;
+    }
+
+    /// <summary>
+    /// Get customer role identifiers
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="showHidden">A value indicating whether to load hidden records</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer role identifiers
+    /// </returns>
+    public virtual async Task<int[]> GetCustomerRoleIdsAsync(Customer customer, bool showHidden = false)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        return (await GetCustomerRolesAsync(customer, showHidden: showHidden))
+            .Select(cr => cr.Id).OrderBy(cr => cr)
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Gets list of customer roles
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="showHidden">A value indicating whether to load hidden records</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<IList<CustomerRole>> GetCustomerRolesAsync(Customer customer, bool showHidden = false)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var allRolesById = await GetAllCustomerRolesDictionaryAsync();
+
+        var mappings = await _shortTermCacheManager.GetAsync(
+            async () => await _customerCustomerRoleMappingRepository.GetAllAsync(query => query.Where(crm => crm.CustomerId == customer.Id)), AssetForgeCustomerServicesDefaults.CustomerRolesCacheKey, customer);
+
+        return mappings.Select(mapping => allRolesById.TryGetValue(mapping.CustomerRoleId, out var role) ? role : null)
+            .Where(cr => cr != null && (showHidden || cr.Active))
+            .ToList();
+    }
+
+    /// <summary>
+    /// Gets all customer roles
+    /// </summary>
+    /// <param name="showHidden">A value indicating whether to show hidden records</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer roles
+    /// </returns>
+    public virtual async Task<IList<CustomerRole>> GetAllCustomerRolesAsync(bool showHidden = false)
+    {
+        var allRolesById = await GetAllCustomerRolesDictionaryAsync();
+
+        return allRolesById.Values
+            .Where(cr => showHidden || cr.Active)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Inserts a customer role
+    /// </summary>
+    /// <param name="customerRole">Customer role</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task InsertCustomerRoleAsync(CustomerRole customerRole)
+    {
+        await _customerRoleRepository.InsertAsync(customerRole);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether customer is in a certain customer role
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="customerRoleSystemName">Customer role system name</param>
+    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsInCustomerRoleAsync(Customer customer,
+        string customerRoleSystemName, bool onlyActiveCustomerRoles = true)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+        ArgumentException.ThrowIfNullOrEmpty(customerRoleSystemName);
+
+        var customerRoles = await GetCustomerRolesAsync(customer, !onlyActiveCustomerRoles);
+
+        return customerRoles?.Any(cr => cr.SystemName == customerRoleSystemName) ?? false;
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether customer is administrator
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsAdminAsync(Customer customer, bool onlyActiveCustomerRoles = true)
+    {
+        return await IsInCustomerRoleAsync(customer, CustomerDefaults.AdministratorsRoleName, onlyActiveCustomerRoles);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether customer is a forum moderator
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsForumModeratorAsync(Customer customer, bool onlyActiveCustomerRoles = true)
+    {
+        return await IsInCustomerRoleAsync(customer, CustomerDefaults.ForumModeratorsRoleName, onlyActiveCustomerRoles);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether customer is registered
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsRegisteredAsync(Customer customer, bool onlyActiveCustomerRoles = true)
+    {
+        return await IsInCustomerRoleAsync(customer, CustomerDefaults.RegisteredRoleName, onlyActiveCustomerRoles);
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether customer is guest
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="onlyActiveCustomerRoles">A value indicating whether we should look only in active customer roles</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsGuestAsync(Customer customer, bool onlyActiveCustomerRoles = true)
+    {
+        return await IsInCustomerRoleAsync(customer, CustomerDefaults.GuestsRoleName, onlyActiveCustomerRoles);
+    }
+
+    /// <summary>
+    /// Updates the customer role
+    /// </summary>
+    /// <param name="customerRole">Customer role</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task UpdateCustomerRoleAsync(CustomerRole customerRole)
+    {
+        await _customerRoleRepository.UpdateAsync(customerRole);
+    }
+
+    #endregion
+
+    #region Customer passwords
+
+    /// <summary>
+    /// Gets customer passwords
+    /// </summary>
+    /// <param name="customerId">Customer identifier; pass null to load all records</param>
+    /// <param name="passwordFormat">Password format; pass null to load all records</param>
+    /// <param name="passwordsToReturn">Number of returning passwords; pass null to load all records</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the list of customer passwords
+    /// </returns>
+    public virtual async Task<IList<CustomerPassword>> GetCustomerPasswordsAsync(int? customerId = null,
+        PasswordFormat? passwordFormat = null, int? passwordsToReturn = null)
+    {
+        var query = _customerPasswordRepository.Table;
+
+        //filter by customer
+        if (customerId.HasValue)
+            query = query.Where(password => password.CustomerId == customerId.Value);
+
+        //filter by password format
+        if (passwordFormat.HasValue)
+            query = query.Where(password => password.PasswordFormatId == (int)passwordFormat.Value);
+
+        //get the latest passwords
+        if (passwordsToReturn.HasValue)
+            query = query.OrderByDescending(password => password.CreatedOnUtc).Take(passwordsToReturn.Value);
+
+        return await query.ToListAsync();
+    }
+
+    /// <summary>
+    /// Get current customer password
+    /// </summary>
+    /// <param name="customerId">Customer identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the customer password
+    /// </returns>
+    public virtual async Task<CustomerPassword> GetCurrentPasswordAsync(int customerId)
+    {
+        if (customerId == 0)
+            return null;
+
+        //return the latest password
+        return (await GetCustomerPasswordsAsync(customerId, passwordsToReturn: 1)).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Insert a customer password
+    /// </summary>
+    /// <param name="customerPassword">Customer password</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task InsertCustomerPasswordAsync(CustomerPassword customerPassword)
+    {
+        await _customerPasswordRepository.InsertAsync(customerPassword);
+    }
+
+    /// <summary>
+    /// Update a customer password
+    /// </summary>
+    /// <param name="customerPassword">Customer password</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task UpdateCustomerPasswordAsync(CustomerPassword customerPassword)
+    {
+        await _customerPasswordRepository.UpdateAsync(customerPassword);
+    }
+
+    /// <summary>
+    /// Check whether password recovery token is valid
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="token">Token to validate</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsPasswordRecoveryTokenValidAsync(Customer customer, string token)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        var cPrt = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.PasswordRecoveryTokenAttribute);
+        if (string.IsNullOrEmpty(cPrt))
+            return false;
+
+        if (!cPrt.Equals(token, StringComparison.InvariantCultureIgnoreCase))
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
+    /// Check whether password recovery link is expired
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<bool> IsPasswordRecoveryLinkExpiredAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        if (_customerSettings.PasswordRecoveryLinkDaysValid == 0)
+            return false;
+
+        var generatedDate = await _genericAttributeService.GetAttributeAsync<DateTime?>(customer, CustomerDefaults.PasswordRecoveryTokenDateGeneratedAttribute);
+        if (!generatedDate.HasValue)
+            return false;
+
+        var daysPassed = (DateTime.UtcNow - generatedDate.Value).TotalDays;
+        if (daysPassed > _customerSettings.PasswordRecoveryLinkDaysValid)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Check whether customer password is expired 
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains true if password is expired; otherwise false
+    /// </returns>
+    public virtual async Task<bool> IsPasswordExpiredAsync(Customer customer)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        //the guests don't have a password
+        if (await IsGuestAsync(customer))
+            return false;
+
+        //password lifetime is disabled for user
+        if (!(await GetCustomerRolesAsync(customer)).Any(role => role.Active && role.EnablePasswordLifetime))
+            return false;
+
+        //setting disabled for all
+        if (_customerSettings.PasswordLifetime == 0)
+            return false;
+
+        //get current password usage time
+        var currentLifetime = await _shortTermCacheManager.GetAsync(async () =>
+        {
+            var customerPassword = await GetCurrentPasswordAsync(customer.Id);
+            //password is not found, so return max value to force customer to change password
+            if (customerPassword == null)
+                return int.MaxValue;
+
+            return (DateTime.UtcNow - customerPassword.CreatedOnUtc).Days;
+        }, AssetForgeCustomerServicesDefaults.CustomerPasswordLifetimeCacheKey, customer);
+
+        return currentLifetime >= _customerSettings.PasswordLifetime;
+    }
+
+    #endregion
+
+    #region Customer address mapping
+
+    /// <summary>
+    /// Remove a customer-address mapping record
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="address">Address</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task RemoveCustomerAddressAsync(Customer customer, Address address)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        //if (await _customerAddressMappingRepository.Table
+        //        .FirstOrDefaultAsync(m => m.AddressId == address.Id && m.CustomerId == customer.Id)
+        //    is CustomerAddressMapping mapping)
+        //{
+        //    if (customer.BillingAddressId == address.Id)
+        //        customer.BillingAddressId = null;
+        //    if (customer.ShippingAddressId == address.Id)
+        //        customer.ShippingAddressId = null;
+
+        //    await _customerAddressMappingRepository.DeleteAsync(mapping);
+        //}
+    }
+
+    /// <summary>
+    /// Inserts a customer-address mapping record
+    /// </summary>
+    /// <param name="customer">Customer</param>
+    /// <param name="address">Address</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task InsertCustomerAddressAsync(Customer customer, Address address)
+    {
+        ArgumentNullException.ThrowIfNull(customer);
+
+        ArgumentNullException.ThrowIfNull(address);
+
+        if (await _customerAddressMappingRepository.Table
+                .FirstOrDefaultAsync(m => m.AddressId == address.Id && m.CustomerId == customer.Id)
+            is null)
+        {
+            var mapping = new CustomerAddressMapping
+            {
+                AddressId = address.Id,
+                CustomerId = customer.Id
+            };
+
+            await _customerAddressMappingRepository.InsertAsync(mapping);
+        }
+    }
+
+    /// <summary>
+    /// Gets a list of addresses mapped to customer
+    /// </summary>
+    /// <param name="customerId">Customer identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<IList<Address>> GetAddressesByCustomerIdAsync(int customerId)
+    {
+        var query = from address in _customerAddressRepository.Table
+                    join cam in _customerAddressMappingRepository.Table on address.Id equals cam.AddressId
+                    where cam.CustomerId == customerId
+                    select address;
+
+        return await _shortTermCacheManager.GetAsync(async () => await query.ToListAsync(), AssetForgeCustomerServicesDefaults.CustomerAddressesCacheKey, customerId);
+    }
+
+    /// <summary>
+    /// Gets a address mapped to customer
+    /// </summary>
+    /// <param name="customerId">Customer identifier</param>
+    /// <param name="addressId">Address identifier</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the result
+    /// </returns>
+    public virtual async Task<Address> GetCustomerAddressAsync(int customerId, int addressId)
+    {
+        if (customerId == 0 || addressId == 0)
+            return null;
+
+        var query = from address in _customerAddressRepository.Table
+                    join cam in _customerAddressMappingRepository.Table on address.Id equals cam.AddressId
+                    where cam.CustomerId == customerId && address.Id == addressId
+                    select address;
+
+        return await _shortTermCacheManager.GetAsync(async () => await query.FirstOrDefaultAsync(), AssetForgeCustomerServicesDefaults.CustomerAddressCacheKey, customerId, addressId);
+    }
+
+    #endregion
+
+    #endregion
+}

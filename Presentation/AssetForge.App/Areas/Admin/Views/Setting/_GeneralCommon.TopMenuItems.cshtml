@@ -1,0 +1,54 @@
+@model GeneralCommonSettingsModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="DisplayDefaultMenuItemSettings.DisplayHomepageMenuItem_OverrideForSite" asp-input="DisplayDefaultMenuItemSettings.DisplayHomepageMenuItem" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="DisplayDefaultMenuItemSettings.DisplayHomepageMenuItem" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DisplayDefaultMenuItemSettings.DisplayHomepageMenuItem" />
+            <span asp-validation-for="DisplayDefaultMenuItemSettings.DisplayHomepageMenuItem"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="DisplayDefaultMenuItemSettings.DisplayCustomerInfoMenuItem_OverrideForSite" asp-input="DisplayDefaultMenuItemSettings.DisplayCustomerInfoMenuItem" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="DisplayDefaultMenuItemSettings.DisplayCustomerInfoMenuItem" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DisplayDefaultMenuItemSettings.DisplayCustomerInfoMenuItem" />
+            <span asp-validation-for="DisplayDefaultMenuItemSettings.DisplayCustomerInfoMenuItem"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="DisplayDefaultMenuItemSettings.DisplayBlogMenuItem_OverrideForSite" asp-input="DisplayDefaultMenuItemSettings.DisplayBlogMenuItem" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="DisplayDefaultMenuItemSettings.DisplayBlogMenuItem" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DisplayDefaultMenuItemSettings.DisplayBlogMenuItem" />
+            <span asp-validation-for="DisplayDefaultMenuItemSettings.DisplayBlogMenuItem"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="DisplayDefaultMenuItemSettings.DisplayForumsMenuItem_OverrideForSite" asp-input="DisplayDefaultMenuItemSettings.DisplayForumsMenuItem" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="DisplayDefaultMenuItemSettings.DisplayForumsMenuItem" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DisplayDefaultMenuItemSettings.DisplayForumsMenuItem" />
+            <span asp-validation-for="DisplayDefaultMenuItemSettings.DisplayForumsMenuItem"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-override-site-checkbox asp-for="DisplayDefaultMenuItemSettings.DisplayContactUsMenuItem_OverrideForSite" asp-input="DisplayDefaultMenuItemSettings.DisplayContactUsMenuItem" asp-site-scope="@Model.ActiveSiteScopeConfiguration" />
+            <ix-label asp-for="DisplayDefaultMenuItemSettings.DisplayContactUsMenuItem" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="DisplayDefaultMenuItemSettings.DisplayContactUsMenuItem" />
+            <span asp-validation-for="DisplayDefaultMenuItemSettings.DisplayContactUsMenuItem"></span>
+        </div>
+    </div>
+</div>

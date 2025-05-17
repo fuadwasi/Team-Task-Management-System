@@ -1,0 +1,26 @@
+﻿@model LanguageModel
+
+@{
+    const string hideInfoBlockAttributeName = "LanguagePage.HideInfoBlock";
+    var customer = await workContext.GetCurrentCustomerAsync();
+    var hideInfoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideInfoBlockAttributeName);
+
+    const string hideResourcesBlockAttributeName = "LanguagePage.HideResourcesBlock";
+    var hideResourcesBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideResourcesBlockAttributeName, defaultValue: true);
+}
+
+<div asp-validation-summary="All"></div>
+<input asp-for="Id" type="hidden" />
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <ix-cards id="language-cards">
+                <ix-card asp-name="language-info" asp-icon="fas fa-info" asp-title="@T("Admin.Configuration.Languages.Info")" asp-hide-block-attribute-name="@hideInfoBlockAttributeName" asp-hide="@hideInfoBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.Info", Model)</ix-card>
+                <ix-card asp-name="language-resources" asp-icon="fas fa-database" asp-title="@T("Admin.Configuration.Languages.Resources")" asp-hide-block-attribute-name="@hideResourcesBlockAttributeName" asp-hide="@hideResourcesBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.Resources", Model)</ix-card>
+
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.LanguageDetailsBlock, additionalData = Model })
+            </ix-cards>
+        </div>
+    </div>
+</section>

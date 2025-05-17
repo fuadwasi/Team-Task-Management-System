@@ -1,0 +1,69 @@
+@model AppSettingsModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="AzureBlobConfigModel.ConnectionString" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AzureBlobConfigModel.ConnectionString" />
+            <span asp-validation-for="AzureBlobConfigModel.ConnectionString"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="AzureBlobConfigModel.ContainerName" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AzureBlobConfigModel.ContainerName" />
+            <span asp-validation-for="AzureBlobConfigModel.ContainerName"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="AzureBlobConfigModel.EndPoint" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AzureBlobConfigModel.EndPoint" />
+            <span asp-validation-for="AzureBlobConfigModel.EndPoint"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="AzureBlobConfigModel.AppendContainerName" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AzureBlobConfigModel.AppendContainerName" />
+            <span asp-validation-for="AzureBlobConfigModel.AppendContainerName"></span>
+        </div>
+    </div>
+    <div class="form-group row">
+        <div class="col-md-3">
+            <ix-label asp-for="AzureBlobConfigModel.SiteDataProtectionKeys" />
+        </div>
+        <div class="col-md-9">
+            <ix-editor asp-for="AzureBlobConfigModel.SiteDataProtectionKeys" />
+            <span asp-validation-for="AzureBlobConfigModel.SiteDataProtectionKeys"></span>
+        </div>
+    </div>
+    <ix-nested-setting asp-for="AzureBlobConfigModel.SiteDataProtectionKeys">
+        <div class="form-group row">
+            <div class="col-md-3">
+                <ix-label asp-for="AzureBlobConfigModel.DataProtectionKeysContainerName" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="AzureBlobConfigModel.DataProtectionKeysContainerName" />
+                <span asp-validation-for="AzureBlobConfigModel.DataProtectionKeysContainerName"></span>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-3">
+                <ix-label asp-for="AzureBlobConfigModel.DataProtectionKeysVaultId" />
+            </div>
+            <div class="col-md-9">
+                <ix-editor asp-for="AzureBlobConfigModel.DataProtectionKeysVaultId" />
+                <span asp-validation-for="AzureBlobConfigModel.DataProtectionKeysVaultId"></span>
+            </div>
+        </div>
+    </ix-nested-setting>
+</div>

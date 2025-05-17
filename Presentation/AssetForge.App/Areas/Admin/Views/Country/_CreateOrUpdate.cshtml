@@ -1,0 +1,26 @@
+﻿@model CountryModel
+
+@{
+    const string hideInfoBlockAttributeName = "CountryPage.HideInfoBlock";
+    var customer = await workContext.GetCurrentCustomerAsync();
+    var hideInfoBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideInfoBlockAttributeName);
+
+    const string hideStatesBlockAttributeName = "CountryPage.HideStatesBlock";
+    var hideStatesBlock = await genericAttributeService.GetAttributeAsync<bool>(customer, hideStatesBlockAttributeName, defaultValue: true);
+}
+
+<div asp-validation-summary="All"></div>
+<input asp-for="Id" type="hidden" />
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <ix-cards id="country-cards">
+                <ix-card asp-name="country-info" asp-icon="fas fa-info" asp-title="@T("Admin.Configuration.Countries.Info")" asp-hide-block-attribute-name="@hideInfoBlockAttributeName" asp-hide="@hideInfoBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.Info", Model)</ix-card>
+                <ix-card asp-name="country-states" asp-icon="fas fa-globe" asp-title="@T("Admin.Configuration.Countries.States")" asp-hide-block-attribute-name="@hideStatesBlockAttributeName" asp-hide="@hideStatesBlock" asp-advanced="false">@await Html.PartialAsync("_CreateOrUpdate.States", Model)</ix-card>
+
+                @await Component.InvokeAsync(typeof(AdminWidgetViewComponent), new { widgetZone = AdminWidgetZones.CountryDetailsBlock, additionalData = Model })
+            </ix-cards>
+        </div>
+    </div>
+</section>

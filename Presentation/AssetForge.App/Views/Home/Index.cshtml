@@ -1,0 +1,25 @@
+﻿@using AssetForge.Services.Localization
+@using AssetForge.Core
+@inject ILocalizationService localizationService
+@inject ISiteContext siteContext
+@{
+    Layout = "_ColumnsOne";
+    var homepageTitle = await localizationService.GetLocalizedAsync(await siteContext.GetCurrentSiteAsync(), s => s.HomepageTitle);
+
+    //title
+    if (!string.IsNullOrEmpty(homepageTitle))
+    {
+        AssetForgeHtml.AddTitleParts(homepageTitle);
+    }
+
+    var homepageDescription = await localizationService.GetLocalizedAsync(await siteContext.GetCurrentSiteAsync(), s => s.HomepageDescription);
+
+    //meta
+    if (!string.IsNullOrEmpty(homepageDescription))
+    {
+        AssetForgeHtml.AddMetaDescriptionParts(homepageDescription);
+    }
+
+    //page class
+    AssetForgeHtml.AppendPageCssClassParts("html-home-page");
+}

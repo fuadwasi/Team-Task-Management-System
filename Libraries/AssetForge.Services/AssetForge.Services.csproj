@@ -1,0 +1,112 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Common\PdfService.cs" />
+    <Compile Remove="Customers\CustomerReportService.cs" />
+    <Compile Remove="Customers\ICustomerReportService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="AutoMapper" Version="13.0.1" />
+    <PackageReference Include="ClosedXML" Version="0.102.3" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
+    <PackageReference Include="MailKit" Version="4.7.1.1" />
+    <PackageReference Include="MaxMind.GeoIP2" Version="5.2.0" />
+    <PackageReference Include="QuestPDF" Version="2022.12.15" />
+    <PackageReference Include="StackExchange.Redis" Version="2.8.0" />
+    <PackageReference Include="Svg.Skia" Version="2.0.0" />
+    <PackageReference Include="System.Linq.Dynamic.Core" Version="1.4.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\OFL.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-ThinItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Thin.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-SemiBoldItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-SemiBold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Regular.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-MediumItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Medium.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-LightItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Light.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Italic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-ExtraLightItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-ExtraLight.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-ExtraBoldItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-ExtraBold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-BoldItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Bold.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-BlackItalic.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\salma\.nuget\packages\questpdf\2024.7.2\buildTransitive\..\LatoFont\Lato-Black.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="tmp\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AssetForge.Core\AssetForge.Core.csproj" />
+    <ProjectReference Include="..\AssetForge.Data\AssetForge.Data.csproj" />
+  </ItemGroup>
+
+</Project>
