@@ -40,7 +40,6 @@
   <ItemGroup>
     <Folder Include="Areas\Admin\Validators\" />
     <Folder Include="Models\Boards\" />
-    <Folder Include="Plugins\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -93,9 +92,15 @@
     <None Include="wwwroot\fonts\dropify\dropify.svg" />
     <None Include="wwwroot\lib_npm\admin-lte\plugins\select2\js\select2.full.min.js" />
     <None Include="wwwroot\lib_npm\admin-lte\plugins\select2\js\select2.min.js" />
+    <Folder Include="NewFolder\" />
+    <Folder Include="Plugins\" />
     <Folder Include="Themes\DefaultClean\Views\" />
     <Folder Include="wwwroot\files\content_file\" />
     <Folder Include="wwwroot\lib_npm\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -103,6 +108,12 @@
     <ProjectReference Include="..\..\Libraries\AssetForge.Data\AssetForge.Data.csproj" />
     <ProjectReference Include="..\..\Libraries\AssetForge.Services\AssetForge.Services.csproj" />
     <ProjectReference Include="..\AssetForge.Web.Framework\AssetForge.Web.Framework.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="JWT">
+      <HintPath>dll\JWT.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 

@@ -18,10 +18,11 @@ public partial class Program
         }
         builder.Configuration.AddEnvironmentVariables();
 
-
-
         //load application settings
         builder.Services.ConfigureApplicationSettings(builder);
+
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
 
         var appSettings = Singleton<AppSettings>.Instance;
 
@@ -42,9 +43,19 @@ public partial class Program
         builder.Services.ConfigureApplicationServices(builder);
 
         var app = builder.Build();
-
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger(); // generates swagger.json
+            app.UseSwaggerUI(); // renders the Swagger UI
+        }
         //configure the application HTTP request pipeline
         app.ConfigureRequestPipeline();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger(); // generates swagger.json
+            app.UseSwaggerUI(); // renders the Swagger UI
+        }
+
         await app.StartEngineAsync();
 
         await app.RunAsync();

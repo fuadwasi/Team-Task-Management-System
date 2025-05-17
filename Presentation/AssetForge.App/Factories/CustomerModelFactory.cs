@@ -16,6 +16,8 @@ using AssetForge.Services.Media;
 using AssetForge.Services.Security;
 using AssetForge.Services.Seo;
 using AssetForge.Services.Sites;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Globalization;
 
 namespace AssetForge.App.Factories
 {
@@ -117,6 +119,243 @@ namespace AssetForge.App.Factories
 
             return Task.FromResult(model);
         }
+
+
+        public virtual async Task<CustomerInfoModel> PrepareCustomerInfoModelAsync(CustomerInfoModel model, Customer customer,
+            bool excludeProperties, string overrideCustomCustomerAttributesXml = "")
+        {
+            ArgumentNullException.ThrowIfNull(model);
+
+            ArgumentNullException.ThrowIfNull(customer);
+
+            model.AllowCustomersToSetTimeZone = _dateTimeSettings.AllowCustomersToSetTimeZone;
+            foreach (var tzi in _dateTimeHelper.GetSystemTimeZones())
+                model.AvailableTimeZones.Add(new SelectListItem { Text = tzi.DisplayName, Value = tzi.Id, Selected = (excludeProperties ? tzi.Id == model.TimeZoneId : tzi.Id == (await _dateTimeHelper.GetCurrentTimeZoneAsync()).Id) });
+
+            var site = await _siteContext.GetCurrentSiteAsync();
+            if (!excludeProperties)
+            {
+                model.FirstName = customer.FirstName;
+                model.LastName = customer.LastName;
+                model.Gender = customer.Gender;
+                var dateOfBirth = customer.DateOfBirth;
+                if (dateOfBirth.HasValue)
+                {
+                    var currentCalendar = CultureInfo.CurrentCulture.Calendar;
+
+                    model.DateOfBirthDay = currentCalendar.GetDayOfMonth(dateOfBirth.Value);
+                    model.DateOfBirthMonth = currentCalendar.GetMonth(dateOfBirth.Value);
+                    model.DateOfBirthYear = currentCalendar.GetYear(dateOfBirth.Value);
+                }
+                model.Company = customer.Company;
+                model.StreetAddress = customer.StreetAddress;
+                model.StreetAddress2 = customer.StreetAddress2;
+                model.ZipPostalCode = customer.ZipPostalCode;
+                model.City = customer.City;
+                model.County = customer.County;
+                model.CountryId = customer.CountryId;
+                model.StateProvinceId = customer.StateProvinceId;
+                model.Phone = customer.Phone;
+                model.Fax = customer.Fax;
+
+
+                model.Signature = await _genericAttributeService.GetAttributeAsync<string>(customer, CustomerDefaults.SignatureAttribute);
+
+                model.Email = customer.Email;
+                model.Username = customer.Username;
+            }
+            else
+            {
+                if (_customerSettings.UsernamesEnabled && !_customerSettings.AllowUsersToChangeUsernames)
+                    model.Username = customer.Username;
+            }
+
+            var currentLanguage = await _workContext.GetWorkingLanguageAsync();
+            //countries and states
+            if (_customerSettings.CountryEnabled)
+            {
+                if (model.CountryId == 0)
+                    model.CountryId = _customerSettings.DefaultCountryId ?? 0;
+
+                model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
+                foreach (var c in await _countryService.GetAllCountriesAsync(currentLanguage.Id))
+                {
+                    model.AvailableCountries.Add(new SelectListItem
+                    {
+                        Text = await _localizationService.GetLocalizedAsync(c, x => x.Name),
+                        Value = c.Id.ToString(),
+                        Selected = c.Id == model.CountryId
+                    });
+                }
+
+                if (_customerSettings.StateProvinceEnabled)
+                {
+                    //states
+                    var states = (await _stateProvinceService.GetStateProvincesByCountryIdAsync(model.CountryId, currentLanguage.Id)).ToList();
+                    if (states.Any())
+                    {
+                        model.AvailableStates.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectState"), Value = "0" });
+
+                        foreach (var s in states)
+                        {
+                            model.AvailableStates.Add(new SelectListItem { Text = await _localizationService.GetLocalizedAsync(s, x => x.Name), Value = s.Id.ToString(), Selected = (s.Id == model.StateProvinceId) });
+                        }
+                    }
+                    else
+                    {
+                        var anyCountrySelected = model.AvailableCountries.Any(x => x.Selected);
+
+                        model.AvailableStates.Add(new SelectListItem
+                        {
+                            Text = await _localizationService.GetResourceAsync(anyCountrySelected ? "Address.Other" : "Address.SelectState"),
+                            Value = "0"
+                        });
+                    }
+
+                }
+            }
+
+            model.FirstNameEnabled = _customerSettings.FirstNameEnabled;
+            model.LastNameEnabled = _customerSettings.LastNameEnabled;
+            model.FirstNameRequired = _customerSettings.FirstNameRequired;
+            model.LastNameRequired = _customerSettings.LastNameRequired;
+            model.GenderEnabled = _customerSettings.GenderEnabled;
+            model.NeutralGenderEnabled = _customerSettings.NeutralGenderEnabled;
+            model.DateOfBirthEnabled = _customerSettings.DateOfBirthEnabled;
+            model.DateOfBirthRequired = _customerSettings.DateOfBirthRequired;
+            model.CompanyEnabled = _customerSettings.CompanyEnabled;
+            model.CompanyRequired = _customerSettings.CompanyRequired;
+            model.StreetAddressEnabled = _customerSettings.StreetAddressEnabled;
+            model.StreetAddressRequired = _customerSettings.StreetAddressRequired;
+            model.StreetAddress2Enabled = _customerSettings.StreetAddress2Enabled;
+            model.StreetAddress2Required = _customerSettings.StreetAddress2Required;
+            model.ZipPostalCodeEnabled = _customerSettings.ZipPostalCodeEnabled;
+            model.ZipPostalCodeRequired = _customerSettings.ZipPostalCodeRequired;
+            model.CityEnabled = _customerSettings.CityEnabled;
+            model.CityRequired = _customerSettings.CityRequired;
+            model.CountyEnabled = _customerSettings.CountyEnabled;
+            model.CountyRequired = _customerSettings.CountyRequired;
+            model.CountryEnabled = _customerSettings.CountryEnabled;
+            model.CountryRequired = _customerSettings.CountryRequired;
+            model.StateProvinceEnabled = _customerSettings.StateProvinceEnabled;
+            model.StateProvinceRequired = _customerSettings.StateProvinceRequired;
+            model.PhoneEnabled = _customerSettings.PhoneEnabled;
+            model.PhoneRequired = _customerSettings.PhoneRequired;
+            model.FaxEnabled = _customerSettings.FaxEnabled;
+            model.FaxRequired = _customerSettings.FaxRequired;
+            model.NewsletterEnabled = _customerSettings.NewsletterEnabled;
+            model.UsernamesEnabled = _customerSettings.UsernamesEnabled;
+            model.AllowUsersToChangeUsernames = _customerSettings.AllowUsersToChangeUsernames;
+            model.CheckUsernameAvailabilityEnabled = _customerSettings.CheckUsernameAvailabilityEnabled;
+
+            //external authentication
+            var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+
+
+            return model;
+        }
+
+
+        public virtual async Task<RegisterModel> PrepareRegisterModelAsync(RegisterModel model, bool excludeProperties,
+            string overrideCustomCustomerAttributesXml = "", bool setDefaultValues = false)
+        {
+            ArgumentNullException.ThrowIfNull(model);
+
+            var customer = await _workContext.GetCurrentCustomerAsync();
+
+            model.AllowCustomersToSetTimeZone = _dateTimeSettings.AllowCustomersToSetTimeZone;
+            foreach (var tzi in _dateTimeHelper.GetSystemTimeZones())
+                model.AvailableTimeZones.Add(new SelectListItem { Text = tzi.DisplayName, Value = tzi.Id, Selected = (excludeProperties ? tzi.Id == model.TimeZoneId : tzi.Id == (await _dateTimeHelper.GetCurrentTimeZoneAsync()).Id) });
+
+            //form fields
+            model.FirstNameEnabled = _customerSettings.FirstNameEnabled;
+            model.LastNameEnabled = _customerSettings.LastNameEnabled;
+            model.FirstNameRequired = _customerSettings.FirstNameRequired;
+            model.LastNameRequired = _customerSettings.LastNameRequired;
+            model.GenderEnabled = _customerSettings.GenderEnabled;
+            model.NeutralGenderEnabled = _customerSettings.NeutralGenderEnabled;
+            model.DateOfBirthEnabled = _customerSettings.DateOfBirthEnabled;
+            model.DateOfBirthRequired = _customerSettings.DateOfBirthRequired;
+            model.CompanyEnabled = _customerSettings.CompanyEnabled;
+            model.CompanyRequired = _customerSettings.CompanyRequired;
+            model.StreetAddressEnabled = _customerSettings.StreetAddressEnabled;
+            model.StreetAddressRequired = _customerSettings.StreetAddressRequired;
+            model.StreetAddress2Enabled = _customerSettings.StreetAddress2Enabled;
+            model.StreetAddress2Required = _customerSettings.StreetAddress2Required;
+            model.ZipPostalCodeEnabled = _customerSettings.ZipPostalCodeEnabled;
+            model.ZipPostalCodeRequired = _customerSettings.ZipPostalCodeRequired;
+            model.CityEnabled = _customerSettings.CityEnabled;
+            model.CityRequired = _customerSettings.CityRequired;
+            model.CountyEnabled = _customerSettings.CountyEnabled;
+            model.CountyRequired = _customerSettings.CountyRequired;
+            model.CountryEnabled = _customerSettings.CountryEnabled;
+            model.CountryRequired = _customerSettings.CountryRequired;
+            model.StateProvinceEnabled = _customerSettings.StateProvinceEnabled;
+            model.StateProvinceRequired = _customerSettings.StateProvinceRequired;
+            model.PhoneEnabled = _customerSettings.PhoneEnabled;
+            model.PhoneRequired = _customerSettings.PhoneRequired;
+            model.FaxEnabled = _customerSettings.FaxEnabled;
+            model.FaxRequired = _customerSettings.FaxRequired;
+            model.NewsletterEnabled = _customerSettings.NewsletterEnabled;
+            model.AcceptPrivacyPolicyEnabled = _customerSettings.AcceptPrivacyPolicyEnabled;
+            model.AcceptPrivacyPolicyPopup = _commonSettings.PopupForTermsOfServiceLinks;
+            model.UsernamesEnabled = _customerSettings.UsernamesEnabled;
+            model.CheckUsernameAvailabilityEnabled = _customerSettings.CheckUsernameAvailabilityEnabled;
+            model.HoneypotEnabled = _securitySettings.HoneypotEnabled;
+            model.DisplayCaptcha = _captchaSettings.Enabled && _captchaSettings.ShowOnRegistrationPage;
+            model.EnteringEmailTwice = _customerSettings.EnteringEmailTwice;
+            if (setDefaultValues)
+            {
+                //enable newsletter by default
+                model.Newsletter = _customerSettings.NewsletterTickedByDefault;
+            }
+
+            //countries and states
+            if (_customerSettings.CountryEnabled)
+            {
+                model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
+                model.CountryId = _customerSettings.DefaultCountryId ?? 0;
+                var currentLanguage = await _workContext.GetWorkingLanguageAsync();
+                foreach (var c in await _countryService.GetAllCountriesAsync(currentLanguage.Id))
+                {
+                    model.AvailableCountries.Add(new SelectListItem
+                    {
+                        Text = await _localizationService.GetLocalizedAsync(c, x => x.Name),
+                        Value = c.Id.ToString(),
+                        Selected = c.Id == model.CountryId
+                    });
+                }
+
+                if (_customerSettings.StateProvinceEnabled)
+                {
+                    //states
+                    var states = (await _stateProvinceService.GetStateProvincesByCountryIdAsync(model.CountryId, currentLanguage.Id)).ToList();
+                    if (states.Any())
+                    {
+                        model.AvailableStates.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectState"), Value = "0" });
+
+                        foreach (var s in states)
+                        {
+                            model.AvailableStates.Add(new SelectListItem { Text = await _localizationService.GetLocalizedAsync(s, x => x.Name), Value = s.Id.ToString(), Selected = (s.Id == model.StateProvinceId) });
+                        }
+                    }
+                    else
+                    {
+                        var anyCountrySelected = model.AvailableCountries.Any(x => x.Selected);
+
+                        model.AvailableStates.Add(new SelectListItem
+                        {
+                            Text = await _localizationService.GetResourceAsync(anyCountrySelected ? "Address.Other" : "Address.SelectState"),
+                            Value = "0"
+                        });
+                    }
+
+                }
+            }
+
+            return model;
+        }
+
 
         public virtual async Task<MultiFactorAuthenticationProviderModel> PrepareMultiFactorAuthenticationProviderModelAsync(MultiFactorAuthenticationProviderModel providerModel, string sysName, bool isLogin = false)
         {

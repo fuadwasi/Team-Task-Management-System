@@ -311,6 +311,7 @@ namespace AssetForge.Web.Framework.Infrastructure.Extensions
 
             services.AddRazorPages();
 
+
             //MVC now serializes JSON with camel case names by default, use this code to avoid it
             mvcBuilder.AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
 
