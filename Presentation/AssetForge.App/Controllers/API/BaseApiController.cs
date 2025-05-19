@@ -11,6 +11,7 @@ namespace AssetForge.App.Controllers.API
     [SaveLastActivity]
     [NstAuthorize]
     [ApiExplorerSettings(IgnoreApi = true)]
+    [JwtAuth(ignore: false)]
     public class BaseApiController : AssetForgeApiController
     {
     }

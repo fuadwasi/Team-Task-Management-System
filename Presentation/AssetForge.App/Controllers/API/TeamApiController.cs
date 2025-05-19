@@ -1,20 +1,15 @@
-﻿using AssetForge.Core.Domain.Customers;
-using AssetForge.Core;
-using Microsoft.AspNetCore.Mvc;
-using AssetForge.Services.Security;
-using DocumentFormat.OpenXml.EMMA;
+﻿using AssetForge.App.Areas.Admin.Factories;
+using AssetForge.App.Areas.Admin.Models.Customers;
 using AssetForge.App.Models.Api;
 using AssetForge.App.Models.Customer;
 using AssetForge.App.Models.Teams;
 using AssetForge.Core.Domain.Teams;
+using AssetForge.Services.Security;
 using AssetForge.Services.Teams;
-using DocumentFormat.OpenXml.Wordprocessing;
-using AssetForge.App.Areas.Admin.Models.Customers;
-using AssetForge.App.Areas.Admin.Factories;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AssetForge.App.Controllers.API
 {
-    [ApiController]
     [Route("api/Team")]
     public class TeamApiController : BaseApiController
     {

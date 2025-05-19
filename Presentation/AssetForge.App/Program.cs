@@ -2,6 +2,8 @@ using Autofac.Extensions.DependencyInjection;
 using AssetForge.Core.Configuration;
 using AssetForge.Core.Infrastructure;
 using AssetForge.Web.Framework.Infrastructure.Extensions;
+using AssetForge.App.Infrastructure.Middleware;
+using AssetForge.App.Infrastructure;
 
 public partial class Program
 {
@@ -21,8 +23,8 @@ public partial class Program
         //load application settings
         builder.Services.ConfigureApplicationSettings(builder);
 
-        builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        //builder.Services.AddEndpointsApiExplorer();
+        //builder.Services.AddSwaggerGen();
 
         var appSettings = Singleton<AppSettings>.Instance;
 
@@ -43,18 +45,22 @@ public partial class Program
         builder.Services.ConfigureApplicationServices(builder);
 
         var app = builder.Build();
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger(); // generates swagger.json
-            app.UseSwaggerUI(); // renders the Swagger UI
-        }
+
+
         //configure the application HTTP request pipeline
         app.ConfigureRequestPipeline();
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwagger(); // generates swagger.json
-            app.UseSwaggerUI(); // renders the Swagger UI
-        }
+
+
+        //if (app.Environment.IsDevelopment())
+        //{
+        //    app.UseSwagger(); // generates swagger.json
+        //    app.UseSwaggerUI(); // renders the Swagger UI
+        //}
+
+        app.UseApiExceptionHandler();
+        app.UseApiNotFound();
+        app.UseCors("AllowAll");
+        app.UseMiddleware<JwtAuthMiddleware>();
 
         await app.StartEngineAsync();
 

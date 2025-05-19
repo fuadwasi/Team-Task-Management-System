@@ -6,7 +6,6 @@ using AssetForge.App.Models.Api;
 using AssetForge.App.Models.Customer;
 using AssetForge.Core;
 using AssetForge.Core.Domain;
-using AssetForge.Core.Domain.Catalog;
 using AssetForge.Core.Domain.Common;
 using AssetForge.Core.Domain.Customers;
 using AssetForge.Core.Domain.Localization;
@@ -34,7 +33,6 @@ using System.Text.Encodings.Web;
 
 namespace AssetForge.App.Controllers.API
 {
-    [ApiController]
     [Route("api/customer")]
     public partial class CustomerApiController : BaseApiController
     {
@@ -202,6 +200,7 @@ namespace AssetForge.App.Controllers.API
 
         #region Login / logout
 
+        [JwtAuth(ignore: true)]
         [HttpGet("login")]
         public virtual async Task<IActionResult> Login(bool? checkoutAsGuest)
         {
@@ -209,6 +208,7 @@ namespace AssetForge.App.Controllers.API
             return OkWrap(model);
         }
 
+        [JwtAuth(ignore: true)]
         [HttpPost("login")]
         public virtual async Task<IActionResult> Login([FromBody] BaseQueryModel<LoginModel> queryModel)
         {
@@ -308,6 +308,7 @@ namespace AssetForge.App.Controllers.API
 
         #region Register
 
+        [JwtAuth(ignore: true)]
         [HttpGet("register")]
         public virtual async Task<IActionResult> Register()
         {
@@ -321,6 +322,7 @@ namespace AssetForge.App.Controllers.API
             return Ok(response);
         }
 
+        [JwtAuth(ignore: true)]
 
         [HttpPost("register")]
         public virtual async Task<IActionResult> Register([FromBody] BaseQueryModel<RegisterModel> queryModel)

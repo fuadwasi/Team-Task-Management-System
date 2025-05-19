@@ -51,6 +51,10 @@ public partial class Startup : IAssetForgeStartup
     /// <param name="application">Builder for configuring an application's request pipeline</param>
     public void Configure(IApplicationBuilder application)
     {
+        //application.UseApiExceptionHandler();
+        //application.UseApiNotFound();
+        //application.UseCors("AllowAll");
+        //application.UseMiddleware<JwtAuthMiddleware>();
     }
 
     /// <summary>
